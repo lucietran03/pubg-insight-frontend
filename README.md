@@ -1,183 +1,75 @@
-# PUBG Insight Frontend
+# React + TypeScript + Vite
 
-Frontend application for **PUBG Insight – AI-powered Performance Analytics Platform**.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-This repository contains the React web application that interacts with the backend REST API and visualizes PUBG player analytics.
+Currently, two official plugins are available:
 
----
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-# Project Overview
+## React Compiler
 
-The frontend provides an intuitive interface for users to:
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-- Search PUBG players
-- View player statistics
-- Explore recent matches
-- Read AI-generated performance insights
-- Track historical analysis
-- Visualize performance trends
+## Expanding the ESLint configuration
 
-The frontend contains no business logic. All data processing is performed by the backend.
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
----
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
 
-# Responsibilities
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
 
-The frontend is responsible for:
-
-- User Interface
-- Routing
-- Calling backend REST APIs
-- Displaying analytics
-- Rendering charts
-- Managing application state
-
----
-
-# Technology Stack
-
-| Category | Technology |
-|-----------|------------|
-| Framework | React |
-| Language | TypeScript |
-| Build Tool | Vite |
-| UI Library | Material UI |
-| HTTP Client | Axios |
-| Routing | React Router |
-| Charts | Recharts |
-| State | React Context (initially) |
-
----
-
-# High-Level Architecture
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 
 ```
-User
 
-    │
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-    ▼
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-React Application
-
-    │
-
-    ▼
-
-Spring Boot REST API
-
-    │
-
-    ▼
-
-AWS + External APIs
-```
-
----
-
-# Planned Folder Structure
-
-```
-src
-
-├── api
-├── assets
-├── components
-├── layouts
-├── pages
-├── routes
-├── services
-├── types
-├── hooks
-├── utils
-└── contexts
-```
-
----
-
-# Planned Pages
-
-- Home
-- Player Search
-- Player Profile
-- Match History
-- AI Analysis
-- Analytics Dashboard
-- History
-
----
-
-# Development Workflow
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 
 ```
-User Action
-
-      │
-
-      ▼
-
-React Component
-
-      │
-
-      ▼
-
-Axios
-
-      │
-
-      ▼
-
-Backend REST API
-
-      │
-
-      ▼
-
-Render UI
-```
-
----
-
-# Current Development Roadmap
-
-- [ ] Initialize React project
-- [ ] Configure routing
-- [ ] Configure Material UI
-- [ ] Configure Axios
-- [ ] Health Check connection
-- [ ] Player Search page
-- [ ] Player Profile page
-- [ ] AI Analysis page
-- [ ] Dashboard page
-- [ ] History page
-
----
-
-# Environment Variables
-
-```
-VITE_API_BASE_URL=http://localhost:8080
-```
-
----
-
-# Running the Project
-
-```bash
-npm install
-
-npm run dev
-```
-
-Frontend runs on
-
-```
-http://localhost:5173
-```
-
----
-
-# Project Status
-
-🚧 Under Development

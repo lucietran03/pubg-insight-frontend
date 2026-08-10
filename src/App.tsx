@@ -1,25 +1,30 @@
 import { useEffect, useState } from "react";
+import { Container, Typography } from "@mui/material";
 import api from "./api/axios";
+import PlayerSearch from "./components/PlayerSearch";
 
 function App() {
-  const [message, setMessage] = useState("Connecting...");
+  const [backendStatus, setBackendStatus] = useState("Connecting...");
 
   useEffect(() => {
     api
       .get("/health")
       .then((res) => {
-        setMessage(res.data.message);
+        setBackendStatus(res.data.message);
       })
       .catch(() => {
-        setMessage("Backend Not Connected");
+        setBackendStatus("Backend Not Connected");
       });
   }, []);
 
   return (
-    <div style={{ padding: 50 }}>
-      <h1>PUBG Insight</h1>
-      <h2>{message}</h2>
-    </div>
+    <Container sx={{ py: 4 }}>
+      <Typography variant="h4">PUBG Insight</Typography>
+      <Typography variant="caption" color="text.secondary">
+        {backendStatus}
+      </Typography>
+      <PlayerSearch />
+    </Container>
   );
 }
 

@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import { searchPlayer } from "../services/playerService";
 import type { Player } from "../types/player";
+import MatchList from "./MatchList";
 
 function PlayerSearch() {
   const [name, setName] = useState("");
@@ -75,6 +76,8 @@ function PlayerSearch() {
           </CardContent>
         </Card>
       )}
+
+      {player && <MatchList playerId={player.id} matchIds={player.recentMatchIds} />}
     </Box>
   );
 }

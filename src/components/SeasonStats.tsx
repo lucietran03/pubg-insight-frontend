@@ -22,7 +22,7 @@ function SeasonStats({ playerId }: SeasonStatsProps) {
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
         <CircularProgress size={20} />
       </Box>
     );
@@ -39,12 +39,12 @@ function SeasonStats({ playerId }: SeasonStatsProps) {
   if (!stats) return null;
 
   return (
-    <Box sx={{ mt: 2 }}>
-      <Typography variant="subtitle2">
-        Season Win Rate: {(stats.winRate * 100).toFixed(1)}%
+    <Box sx={{ textAlign: "center", py: 2 }}>
+      <Typography variant="h3" sx={{ fontWeight: 800, color: "primary.main", lineHeight: 1 }}>
+        {(stats.winRate * 100).toFixed(1)}%
       </Typography>
-      <Typography color="text.secondary" variant="body2">
-        {stats.wins} wins / {stats.roundsPlayed} rounds played (all modes combined)
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+        Season Win Rate · {stats.wins} wins / {stats.roundsPlayed} rounds (all modes)
       </Typography>
     </Box>
   );

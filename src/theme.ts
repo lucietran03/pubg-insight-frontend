@@ -14,6 +14,18 @@ const theme = createTheme({
       paper: "#1C1C1C",
     },
   },
+  shape: {
+    borderRadius: 12,
+  },
+  components: {
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.5)",
+        },
+      },
+    },
+  },
 });
 
 export default theme;

@@ -4,6 +4,8 @@
 >
 > Before making any code changes, please read this document completely.
 
+For the full system architecture (diagrams, sequence flows, design decisions), see `docs/ARCHITECTURE.md` in the **pubg-insight-backend** repo — that's the canonical source since the backend orchestrates every external integration.
+
 ---
 
 # Project

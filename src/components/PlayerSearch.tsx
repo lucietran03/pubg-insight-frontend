@@ -5,7 +5,9 @@ import {
   Button,
   Card,
   CardContent,
+  Chip,
   CircularProgress,
+  Divider,
   Stack,
   TextField,
   Typography,
@@ -41,8 +43,8 @@ function PlayerSearch() {
   };
 
   return (
-    <Box sx={{ maxWidth: 480, mt: 4 }}>
-      <Stack direction="row" spacing={2}>
+    <Box sx={{ mt: 3 }}>
+      <Stack direction="row" spacing={1.5}>
         <TextField
           fullWidth
           label="PUBG player name"
@@ -50,37 +52,44 @@ function PlayerSearch() {
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
         />
-        <Button variant="contained" onClick={handleSearch} disabled={loading}>
+        <Button variant="contained" onClick={handleSearch} disabled={loading} sx={{ px: 3 }}>
           Search
         </Button>
       </Stack>
 
       {loading && (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
           <CircularProgress size={24} />
         </Box>
       )}
 
       {error && (
-        <Alert severity="error" sx={{ mt: 2 }}>
+        <Alert severity="error" sx={{ mt: 3 }}>
           {error}
         </Alert>
       )}
 
       {player && (
-        <Card sx={{ mt: 2 }}>
-          <CardContent>
-            <Typography variant="h6">{player.name}</Typography>
-            <Typography color="text.secondary">Shard: {player.shardId}</Typography>
-            <Typography color="text.secondary">
-              Recent matches: {player.recentMatchIds.length}
-            </Typography>
+        <Card sx={{ mt: 3 }}>
+          <CardContent sx={{ p: 3 }}>
+            <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
+              <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                {player.name}
+              </Typography>
+              <Chip label={player.shardId.toUpperCase()} size="small" color="secondary" />
+            </Stack>
+
             <SeasonStats key={player.id} playerId={player.id} />
+
+            <Divider sx={{ my: 2 }} />
+
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              RECENT MATCHES ({player.recentMatchIds.length})
+            </Typography>
+            <MatchList playerId={player.id} matchIds={player.recentMatchIds} />
           </CardContent>
         </Card>
       )}
-
-      {player && <MatchList playerId={player.id} matchIds={player.recentMatchIds} />}
     </Box>
   );
 }

@@ -1,17 +1,9 @@
 import { useState } from "react";
-import {
-  Alert,
-  Box,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Alert, Box, Chip, CircularProgress, Stack, Typography } from "@mui/material";
 import { getMatchStats } from "../services/matchService";
 import type { Match } from "../types/match";
 import { getErrorMessage } from "../utils/errorMessage";
+import StatTile from "./StatTile";
 
 interface MatchListProps {
   playerId: string;
@@ -42,27 +34,34 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
 
   if (matchIds.length === 0) {
     return (
-      <Typography color="text.secondary" sx={{ mt: 2 }}>
+      <Typography color="text.secondary" variant="body2">
         No recent matches (PUBG only exposes roughly the last 14 days).
       </Typography>
     );
   }
 
   return (
-    <Box sx={{ mt: 2 }}>
-      <Typography variant="subtitle2" gutterBottom>
-        Recent matches
-      </Typography>
-      <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
+    <Box>
+      <Box
+        sx={{
+          maxHeight: 220,
+          overflowY: "auto",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(88px, 1fr))",
+          gap: 1,
+          pr: 0.5,
+        }}
+      >
         {matchIds.map((matchId) => (
           <Chip
             key={matchId}
             label={matchId.slice(0, 8)}
             color={matchId === selectedMatchId ? "primary" : "default"}
             onClick={() => handleSelect(matchId)}
+            sx={{ fontFamily: "monospace", cursor: "pointer" }}
           />
         ))}
-      </Stack>
+      </Box>
 
       {loading && (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
@@ -77,24 +76,21 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
       )}
 
       {match && (
-        <Card sx={{ mt: 2 }}>
-          <CardContent>
-            <Typography variant="subtitle1">
-              {match.mapName} — {match.gameMode}
+        <Box sx={{ mt: 2, bgcolor: "background.default", borderRadius: 2, p: 2 }}>
+          <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              {match.mapName}
             </Typography>
-            <Typography color="text.secondary">Placement: #{match.winPlace}</Typography>
-            <Typography color="text.secondary">Kills: {match.kills}</Typography>
-            <Typography color="text.secondary">
-              Headshot rate: {(match.headshotRate * 100).toFixed(0)}%
-            </Typography>
-            <Typography color="text.secondary">
-              Damage dealt: {match.damageDealt.toFixed(0)}
-            </Typography>
-            <Typography color="text.secondary">
-              Survived: {Math.round(match.timeSurvivedSeconds / 60)} min
-            </Typography>
-          </CardContent>
-        </Card>
+            <Chip label={match.gameMode} size="small" />
+          </Stack>
+          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1.5 }}>
+            <StatTile label="Placement" value={`#${match.winPlace}`} />
+            <StatTile label="Kills" value={match.kills} />
+            <StatTile label="Headshot" value={`${(match.headshotRate * 100).toFixed(0)}%`} />
+            <StatTile label="Damage" value={match.damageDealt.toFixed(0)} />
+            <StatTile label="Survived" value={`${Math.round(match.timeSurvivedSeconds / 60)}m`} />
+          </Box>
+        </Box>
       )}
     </Box>
   );

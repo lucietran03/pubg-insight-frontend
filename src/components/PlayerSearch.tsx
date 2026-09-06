@@ -12,7 +12,9 @@ import {
 } from "@mui/material";
 import { searchPlayer } from "../services/playerService";
 import type { Player } from "../types/player";
+import { getErrorMessage } from "../utils/errorMessage";
 import MatchList from "./MatchList";
+import SeasonStats from "./SeasonStats";
 
 function PlayerSearch() {
   const [name, setName] = useState("");
@@ -31,8 +33,8 @@ function PlayerSearch() {
     try {
       const result = await searchPlayer(trimmedName);
       setPlayer(result);
-    } catch {
-      setError(`Could not find player "${trimmedName}"`);
+    } catch (err) {
+      setError(getErrorMessage(err, `Could not find player "${trimmedName}"`));
     } finally {
       setLoading(false);
     }
@@ -73,6 +75,7 @@ function PlayerSearch() {
             <Typography color="text.secondary">
               Recent matches: {player.recentMatchIds.length}
             </Typography>
+            <SeasonStats key={player.id} playerId={player.id} />
           </CardContent>
         </Card>
       )}

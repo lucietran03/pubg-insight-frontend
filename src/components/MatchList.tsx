@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import { getMatchStats } from "../services/matchService";
 import type { Match } from "../types/match";
+import { getErrorMessage } from "../utils/errorMessage";
 
 interface MatchListProps {
   playerId: string;
@@ -32,8 +33,8 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
     try {
       const result = await getMatchStats(playerId, matchId);
       setMatch(result);
-    } catch {
-      setError("Could not load stats for this match.");
+    } catch (err) {
+      setError(getErrorMessage(err, "This match could not be found for this player."));
     } finally {
       setLoading(false);
     }
@@ -52,7 +53,7 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
       <Typography variant="subtitle2" gutterBottom>
         Recent matches
       </Typography>
-      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+      <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
         {matchIds.map((matchId) => (
           <Chip
             key={matchId}

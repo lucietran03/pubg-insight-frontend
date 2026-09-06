@@ -7,9 +7,10 @@ import AiInsights from "./AiInsights";
 import StatTile from "./StatTile";
 
 // Only the most recent few matches get an automatic rich preview (map/mode/placement/
-// kills/damage) - PUBG has no batch endpoint, so previewing N matches costs N API calls
-// against a 10 req/min free-tier limit. The rest stay as click-to-load chips.
-const PREVIEW_COUNT = 5;
+// kills/damage) - PUBG has no batch endpoint, so previewing N matches costs N API calls.
+// Kept low because a single player search already costs 1 (player) + 1 (season stats,
+// after caching the season id) + N (previews) calls against a 10 req/min free-tier limit.
+const PREVIEW_COUNT = 3;
 
 interface MatchListProps {
   playerId: string;

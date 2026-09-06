@@ -15,13 +15,27 @@ const theme = createTheme({
     },
   },
   shape: {
-    borderRadius: 12,
+    borderRadius: 8,
   },
   components: {
     MuiCard: {
       styleOverrides: {
         root: {
-          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.5)",
+          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.35)",
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 6,
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          borderRadius: 6,
         },
       },
     },

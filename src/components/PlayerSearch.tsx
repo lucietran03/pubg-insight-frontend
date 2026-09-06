@@ -7,7 +7,6 @@ import {
   CardContent,
   Chip,
   CircularProgress,
-  Divider,
   Stack,
   TextField,
   Typography,
@@ -69,26 +68,48 @@ function PlayerSearch() {
         </Alert>
       )}
 
+      {/* Single key on this wrapper (not on SeasonStats/MatchList individually) so the
+          whole section remounts cleanly per player - two sibling elements with the same
+          key value would otherwise trigger a real React "duplicate key" warning. */}
       {player && (
-        <Card sx={{ mt: 3 }}>
-          <CardContent sx={{ p: 3 }}>
-            <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
-              <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                {player.name}
+        <Box key={player.id} sx={{ mt: 3 }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2 }}>
+            <Card>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="overline" color="text.secondary">
+                  PLAYER OVERVIEW
+                </Typography>
+                <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mt: 1 }}>
+                  <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                    {player.name}
+                  </Typography>
+                  <Chip label={player.shardId.toUpperCase()} size="small" color="secondary" />
+                </Stack>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  {player.recentMatchIds.length} matches in the last 14 days
+                </Typography>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="overline" color="text.secondary">
+                  SEASON PERFORMANCE
+                </Typography>
+                <SeasonStats playerId={player.id} />
+              </CardContent>
+            </Card>
+          </Box>
+
+          <Card sx={{ mt: 2 }}>
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="overline" color="text.secondary" gutterBottom>
+                RECENT MATCHES
               </Typography>
-              <Chip label={player.shardId.toUpperCase()} size="small" color="secondary" />
-            </Stack>
-
-            <SeasonStats key={player.id} playerId={player.id} />
-
-            <Divider sx={{ my: 2 }} />
-
-            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-              RECENT MATCHES ({player.recentMatchIds.length})
-            </Typography>
-            <MatchList key={player.id} playerId={player.id} matchIds={player.recentMatchIds} />
-          </CardContent>
-        </Card>
+              <MatchList playerId={player.id} matchIds={player.recentMatchIds} />
+            </CardContent>
+          </Card>
+        </Box>
       )}
     </Box>
   );

@@ -10,7 +10,7 @@ function StatTile({ label, value }: StatTileProps) {
     <Box
       sx={{
         bgcolor: "background.paper",
-        borderRadius: 2,
+        borderRadius: "6px",
         py: 1.5,
         px: 1,
         textAlign: "center",

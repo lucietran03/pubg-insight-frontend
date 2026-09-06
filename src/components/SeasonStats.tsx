@@ -22,7 +22,7 @@ function SeasonStats({ playerId }: SeasonStatsProps) {
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
         <CircularProgress size={20} />
       </Box>
     );
@@ -39,7 +39,7 @@ function SeasonStats({ playerId }: SeasonStatsProps) {
   if (!stats) return null;
 
   return (
-    <Box sx={{ textAlign: "center", py: 2 }}>
+    <Box sx={{ mt: 1 }}>
       <Typography variant="h3" sx={{ fontWeight: 800, color: "primary.main", lineHeight: 1 }}>
         {(stats.winRate * 100).toFixed(1)}%
       </Typography>

@@ -73,7 +73,7 @@ function AiInsights({ playerId, matchId }: AiInsightsProps) {
       )}
 
       {insight && (
-        <Box sx={{ mt: 1, bgcolor: "background.paper", borderRadius: 2, p: 2 }}>
+        <Box sx={{ mt: 1, bgcolor: "background.paper", borderRadius: "6px", p: 2 }}>
           <Typography variant="caption" color="primary.main" sx={{ fontWeight: 700 }}>
             AI PERFORMANCE SUMMARY
           </Typography>

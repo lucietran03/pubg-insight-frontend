@@ -86,7 +86,7 @@ function PlayerSearch() {
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               RECENT MATCHES ({player.recentMatchIds.length})
             </Typography>
-            <MatchList playerId={player.id} matchIds={player.recentMatchIds} />
+            <MatchList key={player.id} playerId={player.id} matchIds={player.recentMatchIds} />
           </CardContent>
         </Card>
       )}

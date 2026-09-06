@@ -3,6 +3,7 @@ import { Alert, Box, Chip, CircularProgress, Stack, Typography } from "@mui/mate
 import { getMatchStats } from "../services/matchService";
 import type { Match } from "../types/match";
 import { getErrorMessage } from "../utils/errorMessage";
+import AiInsights from "./AiInsights";
 import StatTile from "./StatTile";
 
 interface MatchListProps {
@@ -90,6 +91,8 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
             <StatTile label="Damage" value={match.damageDealt.toFixed(0)} />
             <StatTile label="Survived" value={`${Math.round(match.timeSurvivedSeconds / 60)}m`} />
           </Box>
+
+          {selectedMatchId && <AiInsights playerId={playerId} matchId={selectedMatchId} />}
         </Box>
       )}
     </Box>

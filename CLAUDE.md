@@ -1,415 +1,59 @@
-You are a Senior Product Designer and Senior Frontend Engineer.
+# AI Agent Instructions — pubg-insight-frontend
 
-You are redesigning an existing React + Material UI application called **PUBG Insight**.
+You are an AI software engineer working on this repository.
 
-IMPORTANT:
+Before making any changes, read `docs/PROJECT_CONTEXT.md` and `docs/TASK.md` (kept identical to the backend repo's copies — same status, one source of truth). For system architecture, sequence diagrams, and design decisions, read `docs/ARCHITECTURE.md` **in the pubg-insight-backend repo** — this repo doesn't have its own copy.
 
-This is NOT a redesign from scratch.
-
-The current UI already has a strong foundation.
-
-Your objective is to improve the existing design while preserving its overall visual identity.
-
-Think like a product designer polishing a nearly finished application instead of replacing it.
+This repo owns UI, components, charts, and API communication only. It never contains business logic, and never calls PUBG or Gemini directly — every request goes through the backend (`src/api/axios.ts` is the only external call surface; verify this stays true).
 
 ---
 
-# Design Direction
+# Current Status
 
-Target style:
-
-- PUBG PC official website
-- PUBG Esports
-- Modern gaming analytics dashboard
-- Industrial
-- Tactical
-- Premium
-- Minimal
-- Data-focused
-
-Avoid:
-
-- Cartoon
-- Neon cyberpunk
-- Glassmorphism
-- Mobile-first look
-- Rounded fintech style
-- Excessive animations
-- Overly decorative gaming UI
-
-The application should feel like a professional analytics platform built for PUBG players.
+Built: Player Search, Match Analytics (map/placement/kills/headshot/damage/survival), Season Win Rate, AI Insights (Gemini) UI. All on a single page — no routing yet (react-router-dom is installed but unused; add it when a second page, like History or the Dashboard, actually needs one). Not built: Analysis History UI, Analytics Dashboard (Feature 5) — both depend on backend AWS work (DynamoDB/S3/Athena) that hasn't been deployed yet.
 
 ---
 
-# Existing Strengths (KEEP)
+# Design System (established — follow these, don't reinvent)
 
-The current implementation already has several good qualities.
+Built from an explicit design brief (industrial/tactical/premium/minimal, PUBG's own branding — not neon/cartoon/glassmorphism). Current conventions, in `src/theme.ts` and the components:
 
-Preserve them.
+- **Palette**: dark charcoal background (`#121212`/`#1C1C1C`), PUBG-yellow primary accent (`#F2A900`), olive-green secondary (`#4B5320`). Don't introduce new accent colors.
+- **Border radius**: Cards 8px (theme default), buttons/inputs 6px (`MuiButton`/`MuiOutlinedInput` overrides), small stat tiles/inset panels 6px via explicit `sx={{ borderRadius: "6px" }}` (not the `2`-unit shorthand — that resolves against `theme.shape.borderRadius` and drifts if the theme changes). Only `Chip` stays pill-shaped (MUI's own default, don't override).
+- **Layout**: `Container maxWidth="lg"` (~1200px), not a narrow centered column. Content is split into separate `Card`s per logical section (Player Overview / Season Performance / Recent Matches), not one mega-card.
+- **Typography hierarchy**: hero numbers (Win Rate) as `variant="h3"` with `sx={{ fontWeight: 800 }}`; section labels as `variant="overline"` with `color="text.secondary"`; stat tile values as `variant="h6"` bold + `variant="caption"` muted label underneath.
+- **Match previews**: only the first few recent matches (see `PREVIEW_COUNT` in `MatchList.tsx`) get an automatic rich preview card (map/mode/placement/kills/damage) — PUBG has no batch-fetch endpoint, so this is deliberately capped low to stay within the 10 req/min free-tier rate limit alongside the other calls a single search already makes (player + season stats). Don't raise this without checking `docs/ARCHITECTURE.md`'s known-limitations section on API call budget first.
 
-- Dark color palette
-- Yellow accent color
-- Large PUBG INSIGHT title
-- Clean typography
-- Search-first workflow
-- Card-based layout
-- Minimal visual noise
-
-Do NOT replace these.
-
-Improve them.
+**MUI version note**: this project's installed MUI version does NOT accept several common shorthand props directly on components — `fontWeight`, `letterSpacing`, `lineHeight` on `Typography`, `justifyContent`/`alignItems`/`flexWrap` on `Stack`. All of these must go through the `sx` prop instead (e.g. `sx={{ fontWeight: 700 }}`, not `fontWeight={700}`). This has caused real build failures more than once — check this first if a new component fails to typecheck with a "no overload matches" error mentioning a `component` prop.
 
 ---
 
-# Main Problems
+# Error Handling Convention (established, follow this)
 
-The current design has several UX issues.
-
-## 1.
-
-The page is far too narrow.
-
-The content only occupies a small portion of the desktop viewport.
-
-Large empty areas exist on both sides.
-
-The application currently feels like a mobile layout centered on a desktop screen.
-
-Increase the usable width significantly while keeping readability.
+Every service call's `catch` block should route through `src/utils/errorMessage.ts`'s `getErrorMessage(err, notFoundMessage)`, which distinguishes 404 (not found) / 429 (PUBG rate limited) / other error status (service unavailable) / no response (can't reach backend) into different user-facing messages. Don't write a new generic catch-all message for a new component — reuse this util, or extend it if a new distinct case is needed.
 
 ---
 
-## 2.
+# Coding Principles
 
-Everything is inside one large card.
-
-Split the information into logical sections.
-
-Suggested sections:
-
-Player Overview
-
-Season Performance
-
-Recent Matches
-
-Selected Match
-
-Future AI Insights
-
-Future Performance Charts
-
-Each section should feel independent while remaining visually connected.
+Keep components small. Business logic belongs in the backend, never here. Avoid unnecessary abstractions — most components in this app are plain function components with local `useState`/`useEffect`, no context/reducer machinery, because the app doesn't need it yet. Don't add one preemptively.
 
 ---
 
-## 3.
+# Before Writing Code
 
-Recent Matches currently displays only match IDs.
-
-This provides little value.
-
-Instead, every recent match should display meaningful information.
-
-Examples:
-
-Map
-
-Game Mode
-
-Placement
-
-Kills
-
-Damage
-
-Match Time
-
-Match IDs should never be the primary information.
-
-If needed, keep them hidden or secondary.
+1. Does this belong here or in the backend? (If it needs to call PUBG/Gemini/AWS, it belongs in the backend.)
+2. Does a backend endpoint already exist for this, or does the backend need to change first? Never build UI against an API that isn't stable yet.
+3. Does this match the established design system above, or does it need a real, explained reason to deviate?
 
 ---
 
-## 4.
+# Out of Scope
 
-The "Backend Connected" message currently feels like developer/debug information.
-
-Replace it with a small API status indicator in the header.
-
-Example:
-
-● API Online
-
-This should be subtle.
+Business logic, direct external API calls, a different UI framework, routing/state management machinery the app doesn't need yet.
 
 ---
 
-## 5.
+# If You Are Unsure
 
-The Match Detail section should become a proper analytics card.
-
-Instead of showing scattered metrics, create a structured stat grid.
-
-Example metrics:
-
-Placement
-
-Kills
-
-Damage
-
-Headshot Rate
-
-Survival Time
-
-Each metric should have:
-
-large value
-
-small label
-
-consistent spacing
-
----
-
-## 6.
-
-Improve typography hierarchy.
-
-Current typography lacks hierarchy.
-
-Define clear visual levels.
-
-Examples:
-
-Large Hero Title
-
-Section Titles
-
-Metric Labels
-
-Secondary Text
-
-Muted Metadata
-
-The user should immediately know where to look.
-
----
-
-## 7.
-
-Reduce excessive rounded corners.
-
-Current border radius is slightly too soft.
-
-Use approximately:
-
-Main Cards
-
-8px
-
-Stat Cards
-
-6px
-
-Buttons
-
-6px
-
-Inputs
-
-6px
-
-Only badges should remain pill-shaped.
-
----
-
-## 8.
-
-Simplify gradients.
-
-Current gradients are stronger than necessary.
-
-Prefer flat dark surfaces with subtle elevation.
-
-Use shadows sparingly.
-
----
-
-## 9.
-
-Improve information density.
-
-Do NOT simply increase spacing.
-
-Instead,
-
-display more meaningful information.
-
-The application should feel like an analytics dashboard rather than a demo page.
-
----
-
-## 10.
-
-Improve desktop layout.
-
-Suggested maximum width:
-
-1100–1200px
-
-Use a responsive grid.
-
-Do NOT center a narrow column.
-
----
-
-# Color System
-
-Preserve the existing visual language.
-
-Background
-
-Very dark charcoal
-
-Surface
-
-Slightly lighter charcoal
-
-Primary Accent
-
-PUBG yellow
-
-Secondary Accent
-
-Olive green for platform/mode badges
-
-Text
-
-White
-
-Secondary text
-
-Light gray
-
-Muted text
-
-Dark gray
-
-Avoid introducing additional accent colors.
-
----
-
-# Visual Atmosphere
-
-The application currently feels slightly empty.
-
-Add subtle atmosphere without distracting from the data.
-
-Examples:
-
-very light tactical grid
-
-extremely subtle noise texture
-
-soft radial background gradient
-
-Do NOT use large background images.
-
----
-
-# Components
-
-Improve but do not redesign.
-
-Search Bar
-
-Player Card
-
-Season Overview
-
-Recent Matches
-
-Stat Cards
-
-Badges
-
-Buttons
-
-Cards
-
-Keep the overall interaction model unchanged.
-
----
-
-# UX Principles
-
-Prioritize
-
-clarity
-
-information hierarchy
-
-professional appearance
-
-desktop usability
-
-readability
-
-Avoid unnecessary visual effects.
-
----
-
-# Technical Constraints
-
-The project uses
-
-React
-
-TypeScript
-
-Material UI
-
-Do NOT introduce a different UI framework.
-
-Reuse existing components whenever possible.
-
-Avoid unnecessary refactoring.
-
-Only modify what is required to improve the design.
-
----
-
-# Deliverables
-
-Before writing code,
-
-first explain:
-
-1.
-
-Your design strategy.
-
-2.
-
-What will be changed.
-
-3.
-
-What will remain unchanged.
-
-4.
-
-Why each change improves UX.
-
-After that,
-
-implement the redesign incrementally.
-
-Do NOT rewrite the entire page at once.
-
-Keep commits small and maintainable.
-One final constraint:
-
-Every design decision should make the application feel closer to a production-ready gaming analytics platform while preserving the existing implementation. Prefer refinement over replacement. If a component is already good, improve it instead of rebuilding it.
+Never guess. Explain assumptions, propose alternatives, ask for clarification.

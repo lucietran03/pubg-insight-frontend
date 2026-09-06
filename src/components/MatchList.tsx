@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Alert, Box, Chip, CircularProgress, Stack, Typography } from "@mui/material";
+import type { ReactNode } from "react";
+import { Alert, Box, Chip, CircularProgress, Divider, Stack, Typography } from "@mui/material";
 import { getMatchStats } from "../services/matchService";
 import type { Match } from "../types/match";
 import { getErrorMessage } from "../utils/errorMessage";
@@ -10,6 +11,8 @@ import StatTile from "./StatTile";
 // kills/damage) - PUBG has no batch endpoint, so previewing N matches costs N API calls.
 // Kept low because a single player search already costs 1 (player) + 1 (season stats,
 // after caching the season id) + N (previews) calls against a 10 req/min free-tier limit.
+// Matches beyond this are loaded lazily, one API call per click, instead of eagerly -
+// see the older-match list below.
 const PREVIEW_COUNT = 3;
 
 interface MatchListProps {
@@ -17,24 +20,34 @@ interface MatchListProps {
   matchIds: string[];
 }
 
-type PreviewState = Match | "loading" | "error";
+type MatchState = Match | "loading" | "error";
+
+function formatMatchDate(createdAt: string, includeTime = false): string {
+  const date = new Date(createdAt);
+  const dateLabel = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  if (!includeTime) return dateLabel;
+  const timeLabel = date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return `${dateLabel}, ${timeLabel}`;
+}
 
 interface MatchPreviewCardProps {
-  state: PreviewState;
+  state: MatchState | undefined;
   selected: boolean;
   onClick: () => void;
 }
 
 function MatchPreviewCard({ state, selected, onClick }: MatchPreviewCardProps) {
-  if (state === "loading") {
+  if (state === undefined || state === "loading") {
     return (
       <Box
         sx={{
-          p: 1.5,
+          p: 2,
           borderRadius: "6px",
           bgcolor: "background.default",
           display: "flex",
           justifyContent: "center",
+          minHeight: 84,
+          alignItems: "center",
         }}
       >
         <CircularProgress size={18} />
@@ -44,7 +57,7 @@ function MatchPreviewCard({ state, selected, onClick }: MatchPreviewCardProps) {
 
   if (state === "error") {
     return (
-      <Box sx={{ p: 1.5, borderRadius: "6px", bgcolor: "background.default" }}>
+      <Box sx={{ p: 2, borderRadius: "6px", bgcolor: "background.default", minHeight: 84 }}>
         <Typography variant="caption" color="error">
           Failed to load
         </Typography>
@@ -56,7 +69,7 @@ function MatchPreviewCard({ state, selected, onClick }: MatchPreviewCardProps) {
     <Box
       onClick={onClick}
       sx={{
-        p: 1.5,
+        p: 2,
         borderRadius: "6px",
         bgcolor: "background.default",
         border: "1px solid",
@@ -65,15 +78,15 @@ function MatchPreviewCard({ state, selected, onClick }: MatchPreviewCardProps) {
       }}
     >
       <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-          {state.mapName}
+        <Typography variant="body2" sx={{ fontWeight: 700 }}>
+          {formatMatchDate(state.createdAt)} · #{state.winPlace}
         </Typography>
         <Chip label={state.gameMode} size="small" />
       </Stack>
+      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+        {state.mapName}
+      </Typography>
       <Stack direction="row" spacing={1.5} sx={{ mt: 1 }}>
-        <Typography variant="caption" color="text.secondary">
-          #{state.winPlace}
-        </Typography>
         <Typography variant="caption" color="text.secondary">
           {state.kills} kills
         </Typography>
@@ -85,23 +98,72 @@ function MatchPreviewCard({ state, selected, onClick }: MatchPreviewCardProps) {
   );
 }
 
+interface OlderMatchRowProps {
+  state: MatchState | undefined;
+  selected: boolean;
+  onClick: () => void;
+}
+
+function OlderMatchRow({ state, selected, onClick }: OlderMatchRowProps) {
+  let content: ReactNode;
+  if (state === "loading") {
+    content = <CircularProgress size={14} />;
+  } else if (state === "error") {
+    content = (
+      <Typography variant="caption" color="error">
+        Failed to load
+      </Typography>
+    );
+  } else if (state === undefined) {
+    content = (
+      <Typography variant="caption" color="text.secondary">
+        Older match · tap to view details
+      </Typography>
+    );
+  } else {
+    content = (
+      <Typography variant="caption">
+        {formatMatchDate(state.createdAt, true)} · #{state.winPlace} · {state.mapName} · {state.gameMode}
+      </Typography>
+    );
+  }
+
+  return (
+    <Box
+      onClick={onClick}
+      sx={{
+        px: 1.5,
+        py: 1,
+        borderRadius: "6px",
+        bgcolor: "background.default",
+        border: "1px solid",
+        borderColor: selected ? "primary.main" : "transparent",
+        cursor: "pointer",
+      }}
+    >
+      {content}
+    </Box>
+  );
+}
+
 function MatchList({ playerId, matchIds }: MatchListProps) {
   const previewIds = matchIds.slice(0, PREVIEW_COUNT);
   const overflowIds = matchIds.slice(PREVIEW_COUNT);
 
-  const [previewMatches, setPreviewMatches] = useState<Record<string, PreviewState>>(() =>
+  // Holds fetched state for ANY match, whether auto-previewed or lazily loaded from the
+  // older-match list on click - one cache instead of separate preview/selected state, so
+  // a match that's already been loaded once is never re-fetched.
+  const [matchCache, setMatchCache] = useState<Record<string, MatchState>>(() =>
     Object.fromEntries(previewIds.map((id) => [id, "loading" as const]))
   );
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
-  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
-  const [selectedLoading, setSelectedLoading] = useState(false);
   const [selectedError, setSelectedError] = useState<string | null>(null);
 
   useEffect(() => {
     matchIds.slice(0, PREVIEW_COUNT).forEach((matchId) => {
       getMatchStats(playerId, matchId)
-        .then((match) => setPreviewMatches((prev) => ({ ...prev, [matchId]: match })))
-        .catch(() => setPreviewMatches((prev) => ({ ...prev, [matchId]: "error" })));
+        .then((match) => setMatchCache((prev) => ({ ...prev, [matchId]: match })))
+        .catch(() => setMatchCache((prev) => ({ ...prev, [matchId]: "error" })));
     });
   }, [playerId, matchIds]);
 
@@ -109,21 +171,18 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
     setSelectedMatchId(matchId);
     setSelectedError(null);
 
-    const cached = previewMatches[matchId];
-    if (cached && cached !== "loading" && cached !== "error") {
-      setSelectedMatch(cached);
+    const cached = matchCache[matchId];
+    if (cached && cached !== "error") {
       return;
     }
 
-    setSelectedMatch(null);
-    setSelectedLoading(true);
+    setMatchCache((prev) => ({ ...prev, [matchId]: "loading" }));
     try {
       const result = await getMatchStats(playerId, matchId);
-      setSelectedMatch(result);
+      setMatchCache((prev) => ({ ...prev, [matchId]: result }));
     } catch (err) {
+      setMatchCache((prev) => ({ ...prev, [matchId]: "error" }));
       setSelectedError(getErrorMessage(err, "This match could not be found for this player."));
-    } finally {
-      setSelectedLoading(false);
     }
   };
 
@@ -135,19 +194,16 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
     );
   }
 
+  const selectedState = selectedMatchId ? matchCache[selectedMatchId] : undefined;
+  const selectedMatch = selectedState && selectedState !== "loading" && selectedState !== "error" ? selectedState : null;
+
   return (
     <Box>
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
-          gap: 1,
-        }}
-      >
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" }, gap: 1.5 }}>
         {previewIds.map((matchId) => (
           <MatchPreviewCard
             key={matchId}
-            state={previewMatches[matchId] ?? "loading"}
+            state={matchCache[matchId]}
             selected={matchId === selectedMatchId}
             onClick={() => handleSelect(matchId)}
           />
@@ -155,51 +211,72 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
       </Box>
 
       {overflowIds.length > 0 && (
-        <Box
+        <Stack
+          spacing={0.75}
           sx={{
             mt: 1.5,
-            maxHeight: 120,
+            maxHeight: 200,
             overflowY: "auto",
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(88px, 1fr))",
-            gap: 1,
             pr: 0.5,
           }}
         >
-          {overflowIds.map((matchId, index) => (
-            <Chip
+          {overflowIds.map((matchId) => (
+            <OlderMatchRow
               key={matchId}
-              label={`Match ${PREVIEW_COUNT + index + 1}`}
-              color={matchId === selectedMatchId ? "primary" : "default"}
+              state={matchCache[matchId]}
+              selected={matchId === selectedMatchId}
               onClick={() => handleSelect(matchId)}
-              sx={{ cursor: "pointer" }}
             />
           ))}
-        </Box>
+        </Stack>
       )}
 
-      {selectedLoading && (
+      {selectedState === "loading" && (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
           <CircularProgress size={24} />
         </Box>
       )}
 
-      {selectedError && (
+      {selectedError && selectedState === "error" && (
         <Alert severity="error" sx={{ mt: 2 }}>
           {selectedError}
         </Alert>
       )}
 
       {selectedMatch && (
-        <Box sx={{ mt: 2, bgcolor: "background.default", borderRadius: "6px", p: 2 }}>
-          <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-              {selectedMatch.mapName}
-            </Typography>
-            <Chip label={selectedMatch.gameMode} size="small" />
+        <Box sx={{ mt: 2, bgcolor: "background.default", borderRadius: "6px", p: 2.5 }}>
+          <Stack direction="row" spacing={3} sx={{ alignItems: "center" }}>
+            <Box sx={{ minWidth: 90 }}>
+              <Typography variant="overline" color="text.secondary">
+                Placement
+              </Typography>
+              <Typography
+                variant="h3"
+                sx={{
+                  fontWeight: 800,
+                  lineHeight: 1,
+                  color: selectedMatch.winPlace === 1 ? "primary.main" : "text.primary",
+                }}
+              >
+                #{selectedMatch.winPlace}
+              </Typography>
+            </Box>
+            <Box sx={{ flexGrow: 1 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                {selectedMatch.mapName}
+              </Typography>
+              <Stack direction="row" spacing={1} sx={{ alignItems: "center", mt: 0.5 }}>
+                <Chip label={selectedMatch.gameMode} size="small" />
+                <Typography variant="caption" color="text.secondary">
+                  {formatMatchDate(selectedMatch.createdAt, true)}
+                </Typography>
+              </Stack>
+            </Box>
           </Stack>
-          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 1.5 }}>
-            <StatTile label="Placement" value={`#${selectedMatch.winPlace}`} />
+
+          <Divider sx={{ my: 2 }} />
+
+          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1.5 }}>
             <StatTile label="Kills" value={selectedMatch.kills} />
             <StatTile label="Headshot" value={`${(selectedMatch.headshotRate * 100).toFixed(0)}%`} />
             <StatTile label="Damage" value={selectedMatch.damageDealt.toFixed(0)} />

@@ -42,19 +42,35 @@ function PlayerSearch() {
   };
 
   return (
-    <Box sx={{ mt: 3 }}>
-      <Stack direction="row" spacing={1.5}>
-        <TextField
-          fullWidth
-          label="PUBG player name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-        />
-        <Button variant="contained" onClick={handleSearch} disabled={loading} sx={{ px: 3 }}>
-          Search
-        </Button>
-      </Stack>
+    <Box>
+      <Box
+        sx={{
+          bgcolor: "background.paper",
+          border: "1px solid",
+          borderColor: "divider",
+          borderRadius: "8px",
+          p: { xs: 2, md: 2.5 },
+        }}
+      >
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+          <TextField
+            fullWidth
+            placeholder="Enter a PUBG player name (steam shard)"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            slotProps={{ input: { sx: { fontSize: "1.05rem", py: 0.5 } } }}
+          />
+          <Button
+            variant="contained"
+            onClick={handleSearch}
+            disabled={loading}
+            sx={{ px: 4, fontWeight: 700, letterSpacing: 0.5 }}
+          >
+            Search
+          </Button>
+        </Stack>
+      </Box>
 
       {loading && (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
@@ -79,7 +95,7 @@ function PlayerSearch() {
                 <Typography variant="overline" color="text.secondary">
                   PLAYER OVERVIEW
                 </Typography>
-                <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mt: 1 }}>
+                <Stack direction="row" spacing={1} sx={{ alignItems: "center", mt: 1 }}>
                   <Typography variant="h4" sx={{ fontWeight: 800 }}>
                     {player.name}
                   </Typography>

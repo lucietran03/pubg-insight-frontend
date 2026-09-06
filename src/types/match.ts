@@ -8,4 +8,5 @@ export interface Match {
   damageDealt: number;
   timeSurvivedSeconds: number;
   winPlace: number;
+  createdAt: string;
 }

@@ -8,21 +8,27 @@ import { getErrorMessage } from "../utils/errorMessage";
 import AiInsights from "./AiInsights";
 import StatTile from "./StatTile";
 
-// Only the most recent few matches get an automatic, immediate rich preview (map/mode/
-// placement/kills/damage) - PUBG has no batch endpoint, so previewing N matches costs N
-// API calls, and a single search already spends 1 (player) + 1 (season stats, after
-// caching the season id) before this. Matches beyond this count still load
-// automatically (see the background queue below), just paced out instead of firing all
-// at once, to stay within PUBG's 10 req/min free-tier limit.
-const PREVIEW_COUNT = 3;
+// The most recent matches get an automatic, immediate rich preview (map/mode/placement/
+// kills/damage) - PUBG has no batch endpoint, so previewing N matches costs N API calls,
+// and a single search already spends 1 (player) + 1 (season stats, after caching the
+// season id) before this. Matches beyond this count still load automatically (see the
+// background queue below), just paced out instead of firing all at once, to stay within
+// PUBG's 10 req/min free-tier limit.
+const PREVIEW_COUNT = 7;
+// Cap on how many matches this component will ever fetch/show at all, regardless of how
+// many PUBG actually returns for the player (up to ~14 days' worth, which can be dozens
+// for an active player). Beyond real UX value at that point, and the background queue
+// below would take a very long time - and risk far more 429s - trying to load all of
+// them. matchIds is newest-first, so this keeps the most recent N and drops the rest.
+const MAX_MATCHES_DISPLAYED = 50;
 // Let the initial preview burst (player + season + previews, all fired together) clear
 // PUBG's rate window before starting the background queue for older matches.
-const BACKGROUND_LOAD_INITIAL_DELAY_MS = 2500;
-// One call roughly every 6.5s is ~9/min from this queue alone - deliberately under
-// PUBG's 10/min limit so there's still headroom for another search or a retried click
-// while the queue is running.
-const BACKGROUND_LOAD_INTERVAL_MS = 6500;
-const RATE_LIMIT_DEFAULT_BACKOFF_MS = 15000;
+const BACKGROUND_LOAD_INITIAL_DELAY_MS = 8000;
+// One call roughly every 9s is ~6.7/min from this queue alone - well under PUBG's 10/min
+// limit even after accounting for the initial preview burst and the occasional retried
+// click, which is what actually caused real 429s at the previous, tighter pacing.
+const BACKGROUND_LOAD_INTERVAL_MS = 9000;
+const RATE_LIMIT_DEFAULT_BACKOFF_MS = 20000;
 const RATE_LIMIT_MAX_RETRIES = 3;
 
 function sleep(ms: number): Promise<void> {
@@ -194,8 +200,10 @@ function SelectedMatchSkeleton() {
 }
 
 function MatchList({ playerId, matchIds }: MatchListProps) {
-  const previewIds = matchIds.slice(0, PREVIEW_COUNT);
-  const overflowIds = matchIds.slice(PREVIEW_COUNT);
+  const displayedIds = matchIds.slice(0, MAX_MATCHES_DISPLAYED);
+  const hiddenCount = matchIds.length - displayedIds.length;
+  const previewIds = displayedIds.slice(0, PREVIEW_COUNT);
+  const overflowIds = displayedIds.slice(PREVIEW_COUNT);
 
   // Holds fetched state for ANY match, whether auto-previewed or lazily loaded from the
   // older-match list on click - one cache instead of separate preview/selected state, so
@@ -214,6 +222,9 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
   }, [matchCache]);
 
   useEffect(() => {
+    // PREVIEW_COUNT is always far smaller than MAX_MATCHES_DISPLAYED, so slicing matchIds
+    // directly (rather than the outer displayedIds/previewIds) gives the same result
+    // without adding a non-primitive dependency that would re-run this every render.
     matchIds.slice(0, PREVIEW_COUNT).forEach((matchId) => {
       getMatchStats(playerId, matchId)
         .then((match) => setMatchCache((prev) => ({ ...prev, [matchId]: match })))
@@ -247,7 +258,7 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
     }
 
     async function runQueue() {
-      for (const matchId of matchIds.slice(PREVIEW_COUNT)) {
+      for (const matchId of matchIds.slice(PREVIEW_COUNT, MAX_MATCHES_DISPLAYED)) {
         if (cancelled) return;
         const current = matchCacheRef.current[matchId];
         // Only an untouched or previously-failed entry is this queue's to fetch - anything
@@ -332,6 +343,12 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
             />
           ))}
         </Stack>
+      )}
+
+      {hiddenCount > 0 && (
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
+          Showing the {MAX_MATCHES_DISPLAYED} most recent matches ({hiddenCount} older not shown).
+        </Typography>
       )}
 
       {selectedState === "loading" && <SelectedMatchSkeleton />}

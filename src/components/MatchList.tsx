@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import axios from "axios";
 import { Alert, Box, Chip, Divider, Skeleton, Stack, Typography } from "@mui/material";
 import { getMatchStats } from "../services/matchService";
 import type { Match } from "../types/match";
@@ -7,13 +8,26 @@ import { getErrorMessage } from "../utils/errorMessage";
 import AiInsights from "./AiInsights";
 import StatTile from "./StatTile";
 
-// Only the most recent few matches get an automatic rich preview (map/mode/placement/
-// kills/damage) - PUBG has no batch endpoint, so previewing N matches costs N API calls.
-// Kept low because a single player search already costs 1 (player) + 1 (season stats,
-// after caching the season id) + N (previews) calls against a 10 req/min free-tier limit.
-// Matches beyond this are loaded lazily, one API call per click, instead of eagerly -
-// see the older-match list below.
+// Only the most recent few matches get an automatic, immediate rich preview (map/mode/
+// placement/kills/damage) - PUBG has no batch endpoint, so previewing N matches costs N
+// API calls, and a single search already spends 1 (player) + 1 (season stats, after
+// caching the season id) before this. Matches beyond this count still load
+// automatically (see the background queue below), just paced out instead of firing all
+// at once, to stay within PUBG's 10 req/min free-tier limit.
 const PREVIEW_COUNT = 3;
+// Let the initial preview burst (player + season + previews, all fired together) clear
+// PUBG's rate window before starting the background queue for older matches.
+const BACKGROUND_LOAD_INITIAL_DELAY_MS = 2500;
+// One call roughly every 6.5s is ~9/min from this queue alone - deliberately under
+// PUBG's 10/min limit so there's still headroom for another search or a retried click
+// while the queue is running.
+const BACKGROUND_LOAD_INTERVAL_MS = 6500;
+const RATE_LIMIT_DEFAULT_BACKOFF_MS = 15000;
+const RATE_LIMIT_MAX_RETRIES = 3;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 interface MatchListProps {
   playerId: string;
@@ -112,15 +126,17 @@ function MatchPreviewCard({ state, selected, onClick }: MatchPreviewCardProps) {
 }
 
 interface OlderMatchRowProps {
-  index: number;
   state: MatchState | undefined;
   selected: boolean;
   onClick: () => void;
 }
 
-function OlderMatchRow({ index, state, selected, onClick }: OlderMatchRowProps) {
+function OlderMatchRow({ state, selected, onClick }: OlderMatchRowProps) {
   let content: ReactNode;
-  if (state === "loading") {
+  // Undefined (not yet reached by the background queue) renders the same as "loading" -
+  // it's about to load on its own shortly, so there's no useful distinction to show the
+  // user, and no "tap to load" prompt needed since a tap is no longer required.
+  if (state === "loading" || state === undefined) {
     content = <Skeleton variant="text" width="55%" height={18} />;
   } else if (state === "error") {
     content = (
@@ -130,30 +146,6 @@ function OlderMatchRow({ index, state, selected, onClick }: OlderMatchRowProps) 
           tap to retry
         </Typography>
       </Typography>
-    );
-  } else if (state === undefined) {
-    content = (
-      <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-        <Box
-          sx={{
-            width: 18,
-            height: 18,
-            borderRadius: "4px",
-            bgcolor: "background.paper",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
-          <Typography variant="caption" sx={{ fontSize: "0.65rem", color: "text.secondary" }}>
-            {index}
-          </Typography>
-        </Box>
-        <Typography variant="caption" color="text.secondary">
-          Older match · tap to view placement, map and date
-        </Typography>
-      </Stack>
     );
   } else {
     content = (
@@ -214,12 +206,65 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [selectedError, setSelectedError] = useState<string | null>(null);
 
+  // Lets the background queue below read the latest cache without being a dependency of
+  // its effect (adding matchCache there would restart the queue on every single fetch).
+  const matchCacheRef = useRef(matchCache);
+  useEffect(() => {
+    matchCacheRef.current = matchCache;
+  }, [matchCache]);
+
   useEffect(() => {
     matchIds.slice(0, PREVIEW_COUNT).forEach((matchId) => {
       getMatchStats(playerId, matchId)
         .then((match) => setMatchCache((prev) => ({ ...prev, [matchId]: match })))
         .catch(() => setMatchCache((prev) => ({ ...prev, [matchId]: "error" })));
     });
+  }, [playerId, matchIds]);
+
+  // Auto-loads every older match too, just paced out instead of firing all at once - see
+  // the constants above for why. A click (handleSelect) can still jump ahead of this
+  // queue for one specific match; this loop simply skips anything already loaded,
+  // in-flight, or already claimed by a click by the time it gets to it.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadWithRateLimitRetry(matchId: string, attempt: number) {
+      setMatchCache((prev) => ({ ...prev, [matchId]: "loading" }));
+      try {
+        const result = await getMatchStats(playerId, matchId);
+        if (!cancelled) setMatchCache((prev) => ({ ...prev, [matchId]: result }));
+      } catch (err) {
+        const isRateLimited = axios.isAxiosError(err) && err.response?.status === 429;
+        if (isRateLimited && attempt < RATE_LIMIT_MAX_RETRIES) {
+          const retryAfterHeader = err.response?.headers?.["retry-after"];
+          const retryAfterMs = retryAfterHeader ? Number(retryAfterHeader) * 1000 : NaN;
+          await sleep(Number.isFinite(retryAfterMs) ? retryAfterMs : RATE_LIMIT_DEFAULT_BACKOFF_MS);
+          if (!cancelled) await loadWithRateLimitRetry(matchId, attempt + 1);
+          return;
+        }
+        if (!cancelled) setMatchCache((prev) => ({ ...prev, [matchId]: "error" }));
+      }
+    }
+
+    async function runQueue() {
+      for (const matchId of matchIds.slice(PREVIEW_COUNT)) {
+        if (cancelled) return;
+        const current = matchCacheRef.current[matchId];
+        // Only an untouched or previously-failed entry is this queue's to fetch - anything
+        // "loading" is already being handled (by a click, or an earlier pass of this loop).
+        if (current === undefined || current === "error") {
+          await loadWithRateLimitRetry(matchId, 0);
+        }
+        if (cancelled) return;
+        await sleep(BACKGROUND_LOAD_INTERVAL_MS);
+      }
+    }
+
+    const startTimer = setTimeout(runQueue, BACKGROUND_LOAD_INITIAL_DELAY_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(startTimer);
+    };
   }, [playerId, matchIds]);
 
   // Also doubles as the retry action: clicking an already-failed card/row re-runs this,
@@ -278,10 +323,9 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
             pr: 0.5,
           }}
         >
-          {overflowIds.map((matchId, index) => (
+          {overflowIds.map((matchId) => (
             <OlderMatchRow
               key={matchId}
-              index={PREVIEW_COUNT + index + 1}
               state={matchCache[matchId]}
               selected={matchId === selectedMatchId}
               onClick={() => handleSelect(matchId)}

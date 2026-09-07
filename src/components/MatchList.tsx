@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { Alert, Box, Chip, CircularProgress, Divider, Stack, Typography } from "@mui/material";
+import { Alert, Box, Chip, Divider, Skeleton, Stack, Typography } from "@mui/material";
 import { getMatchStats } from "../services/matchService";
 import type { Match } from "../types/match";
 import { getErrorMessage } from "../utils/errorMessage";
@@ -22,6 +22,11 @@ interface MatchListProps {
 
 type MatchState = Match | "loading" | "error";
 
+// Every card/row in this file rests on a transparent-vs-divider border and only turns
+// primary (gold) when selected - one rule everywhere instead of some rows having no
+// visible resting border and others having a gray one.
+const restingBorderColor = "divider";
+
 function formatMatchDate(createdAt: string, includeTime = false): string {
   const date = new Date(createdAt);
   const dateLabel = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -39,27 +44,35 @@ interface MatchPreviewCardProps {
 function MatchPreviewCard({ state, selected, onClick }: MatchPreviewCardProps) {
   if (state === undefined || state === "loading") {
     return (
-      <Box
-        sx={{
-          p: 2,
-          borderRadius: "6px",
-          bgcolor: "background.default",
-          display: "flex",
-          justifyContent: "center",
-          minHeight: 84,
-          alignItems: "center",
-        }}
-      >
-        <CircularProgress size={18} />
+      <Box sx={{ p: 2, borderRadius: "6px", bgcolor: "background.default", minHeight: 84 }}>
+        <Skeleton variant="text" width="60%" height={22} />
+        <Skeleton variant="text" width="40%" height={16} sx={{ mt: 0.5 }} />
+        <Skeleton variant="text" width="70%" height={16} sx={{ mt: 1 }} />
       </Box>
     );
   }
 
   if (state === "error") {
     return (
-      <Box sx={{ p: 2, borderRadius: "6px", bgcolor: "background.default", minHeight: 84 }}>
-        <Typography variant="caption" color="error">
-          Failed to load
+      <Box
+        onClick={onClick}
+        sx={{
+          p: 2,
+          borderRadius: "6px",
+          bgcolor: "background.default",
+          minHeight: 84,
+          cursor: "pointer",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          gap: 0.5,
+        }}
+      >
+        <Typography variant="body2" color="text.secondary">
+          ⚠ Couldn't load this match
+        </Typography>
+        <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 700 }}>
+          Tap to retry
         </Typography>
       </Box>
     );
@@ -73,7 +86,7 @@ function MatchPreviewCard({ state, selected, onClick }: MatchPreviewCardProps) {
         borderRadius: "6px",
         bgcolor: "background.default",
         border: "1px solid",
-        borderColor: selected ? "primary.main" : "transparent",
+        borderColor: selected ? "primary.main" : restingBorderColor,
         cursor: "pointer",
       }}
     >
@@ -99,26 +112,48 @@ function MatchPreviewCard({ state, selected, onClick }: MatchPreviewCardProps) {
 }
 
 interface OlderMatchRowProps {
+  index: number;
   state: MatchState | undefined;
   selected: boolean;
   onClick: () => void;
 }
 
-function OlderMatchRow({ state, selected, onClick }: OlderMatchRowProps) {
+function OlderMatchRow({ index, state, selected, onClick }: OlderMatchRowProps) {
   let content: ReactNode;
   if (state === "loading") {
-    content = <CircularProgress size={14} />;
+    content = <Skeleton variant="text" width="55%" height={18} />;
   } else if (state === "error") {
     content = (
-      <Typography variant="caption" color="error">
-        Failed to load
+      <Typography variant="caption" color="text.secondary">
+        ⚠ Couldn't load ·{" "}
+        <Typography component="span" variant="caption" sx={{ color: "primary.main", fontWeight: 700 }}>
+          tap to retry
+        </Typography>
       </Typography>
     );
   } else if (state === undefined) {
     content = (
-      <Typography variant="caption" color="text.secondary">
-        Older match · tap to view details
-      </Typography>
+      <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+        <Box
+          sx={{
+            width: 18,
+            height: 18,
+            borderRadius: "4px",
+            bgcolor: "background.paper",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <Typography variant="caption" sx={{ fontSize: "0.65rem", color: "text.secondary" }}>
+            {index}
+          </Typography>
+        </Box>
+        <Typography variant="caption" color="text.secondary">
+          Older match · tap to view placement, map and date
+        </Typography>
+      </Stack>
     );
   } else {
     content = (
@@ -137,11 +172,31 @@ function OlderMatchRow({ state, selected, onClick }: OlderMatchRowProps) {
         borderRadius: "6px",
         bgcolor: "background.default",
         border: "1px solid",
-        borderColor: selected ? "primary.main" : "transparent",
+        borderColor: selected ? "primary.main" : restingBorderColor,
         cursor: "pointer",
       }}
     >
       {content}
+    </Box>
+  );
+}
+
+function SelectedMatchSkeleton() {
+  return (
+    <Box sx={{ mt: 2, bgcolor: "background.default", borderRadius: "6px", p: 2.5 }}>
+      <Stack direction="row" spacing={3} sx={{ alignItems: "center" }}>
+        <Skeleton variant="text" width={70} height={56} />
+        <Box sx={{ flexGrow: 1 }}>
+          <Skeleton variant="text" width="40%" height={24} />
+          <Skeleton variant="text" width="30%" height={18} sx={{ mt: 0.5 }} />
+        </Box>
+      </Stack>
+      <Divider sx={{ my: 2 }} />
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(4, 1fr)" }, gap: 1.5 }}>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} variant="rounded" height={64} sx={{ borderRadius: "6px" }} />
+        ))}
+      </Box>
     </Box>
   );
 }
@@ -167,6 +222,9 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
     });
   }, [playerId, matchIds]);
 
+  // Also doubles as the retry action: clicking an already-failed card/row re-runs this,
+  // and since its cache entry is "error" (not a loaded Match), the guard below falls
+  // through to a fresh fetch instead of returning early.
   const handleSelect = async (matchId: string) => {
     setSelectedMatchId(matchId);
     setSelectedError(null);
@@ -199,7 +257,7 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
 
   return (
     <Box>
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" }, gap: 1.5 }}>
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }, gap: 1.5 }}>
         {previewIds.map((matchId) => (
           <MatchPreviewCard
             key={matchId}
@@ -220,9 +278,10 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
             pr: 0.5,
           }}
         >
-          {overflowIds.map((matchId) => (
+          {overflowIds.map((matchId, index) => (
             <OlderMatchRow
               key={matchId}
+              index={PREVIEW_COUNT + index + 1}
               state={matchCache[matchId]}
               selected={matchId === selectedMatchId}
               onClick={() => handleSelect(matchId)}
@@ -231,11 +290,7 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
         </Stack>
       )}
 
-      {selectedState === "loading" && (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-          <CircularProgress size={24} />
-        </Box>
-      )}
+      {selectedState === "loading" && <SelectedMatchSkeleton />}
 
       {selectedError && selectedState === "error" && (
         <Alert severity="error" sx={{ mt: 2 }}>
@@ -245,7 +300,7 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
 
       {selectedMatch && (
         <Box sx={{ mt: 2, bgcolor: "background.default", borderRadius: "6px", p: 2.5 }}>
-          <Stack direction="row" spacing={3} sx={{ alignItems: "center" }}>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 1, sm: 3 }} sx={{ alignItems: { sm: "center" } }}>
             <Box sx={{ minWidth: 90 }}>
               <Typography variant="overline" color="text.secondary">
                 Placement
@@ -265,7 +320,7 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
               <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                 {selectedMatch.mapName}
               </Typography>
-              <Stack direction="row" spacing={1} sx={{ alignItems: "center", mt: 0.5 }}>
+              <Stack direction="row" spacing={1} sx={{ alignItems: "center", mt: 0.5, flexWrap: "wrap" }}>
                 <Chip label={selectedMatch.gameMode} size="small" />
                 <Typography variant="caption" color="text.secondary">
                   {formatMatchDate(selectedMatch.createdAt, true)}
@@ -276,7 +331,17 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
 
           <Divider sx={{ my: 2 }} />
 
-          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1.5 }}>
+          <Typography variant="overline" color="text.secondary">
+            Combat &amp; Survival
+          </Typography>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(4, 1fr)" },
+              gap: 1.5,
+              mt: 1,
+            }}
+          >
             <StatTile label="Kills" value={selectedMatch.kills} />
             <StatTile label="Headshot" value={`${(selectedMatch.headshotRate * 100).toFixed(0)}%`} />
             <StatTile label="Damage" value={selectedMatch.damageDealt.toFixed(0)} />

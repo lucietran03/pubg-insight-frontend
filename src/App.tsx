@@ -22,7 +22,7 @@ function App() {
     <Box>
       <Box sx={{ borderBottom: "1px solid", borderColor: "divider" }}>
         <Container maxWidth="xl">
-          <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", py: 2 }}>
+          <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", py: { xs: 1.5, md: 2 }, flexWrap: "wrap", gap: 1 }}>
             <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: 1 }}>
               PUBG INSIGHT
             </Typography>
@@ -35,7 +35,7 @@ function App() {
           </Stack>
         </Container>
       </Box>
-      <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Container maxWidth="xl" sx={{ py: { xs: 2.5, md: 4 } }}>
         <PlayerSearch />
       </Container>
     </Box>

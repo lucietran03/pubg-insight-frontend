@@ -91,12 +91,12 @@ function PlayerSearch() {
         <Box key={player.id} sx={{ mt: 3 }}>
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2 }}>
             <Card>
-              <CardContent sx={{ p: 3 }}>
+              <CardContent sx={{ p: { xs: 2, md: 3 } }}>
                 <Typography variant="overline" color="text.secondary">
                   PLAYER OVERVIEW
                 </Typography>
-                <Stack direction="row" spacing={1} sx={{ alignItems: "center", mt: 1 }}>
-                  <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                <Stack direction="row" spacing={1} sx={{ alignItems: "center", mt: 1, flexWrap: "wrap" }}>
+                  <Typography variant="h4" sx={{ fontWeight: 800, wordBreak: "break-word" }}>
                     {player.name}
                   </Typography>
                   <Chip label={player.shardId.toUpperCase()} size="small" color="secondary" />
@@ -108,7 +108,7 @@ function PlayerSearch() {
             </Card>
 
             <Card>
-              <CardContent sx={{ p: 3 }}>
+              <CardContent sx={{ p: { xs: 2, md: 3 } }}>
                 <Typography variant="overline" color="text.secondary">
                   SEASON PERFORMANCE
                 </Typography>
@@ -118,7 +118,7 @@ function PlayerSearch() {
           </Box>
 
           <Card sx={{ mt: 2 }}>
-            <CardContent sx={{ p: 3 }}>
+            <CardContent sx={{ p: { xs: 2, md: 3 } }}>
               <Typography variant="overline" color="text.secondary" gutterBottom>
                 RECENT MATCHES
               </Typography>

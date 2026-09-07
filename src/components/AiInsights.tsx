@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Box, Button, Chip, CircularProgress, Divider, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, Chip, Divider, Skeleton, Stack, Typography } from "@mui/material";
 import { getInsights } from "../services/insightService";
 import type { Insight } from "../types/insight";
 import { getErrorMessage } from "../utils/errorMessage";
@@ -61,13 +61,19 @@ function AiInsights({ playerId, matchId }: AiInsightsProps) {
       )}
 
       {loading && (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-          <CircularProgress size={20} />
+        <Box sx={{ mt: 1, bgcolor: "background.paper", borderRadius: "6px", p: 2 }}>
+          <Skeleton variant="text" width="45%" height={16} />
+          <Skeleton variant="text" width="95%" height={20} sx={{ mt: 0.5 }} />
+          <Skeleton variant="text" width="80%" height={20} />
+          <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+            <Skeleton variant="rounded" width={72} height={24} sx={{ borderRadius: "16px" }} />
+            <Skeleton variant="rounded" width={90} height={24} sx={{ borderRadius: "16px" }} />
+          </Stack>
         </Box>
       )}
 
       {error && (
-        <Alert severity="error" sx={{ mt: 2 }}>
+        <Alert severity="warning" sx={{ mt: 2 }}>
           {error}
         </Alert>
       )}

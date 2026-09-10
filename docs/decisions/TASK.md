@@ -1,6 +1,6 @@
 # Roadmap (Weeks 7–12)
 
-High-level plan mapping the approved architecture (see `PROJECT_CONTEXT.md`) to the assignment timeline. Real deadline per `docs/WBS.md`/`docs/Calendar.md`: Canvas submission 12-Sep, demo target 17/18-Sep.
+High-level plan mapping the approved architecture (see `PROJECT_CONTEXT.md`) to the assignment timeline. Real deadline per `docs/decisions/WBS.md`/`docs/decisions/Calendar.md`: Canvas submission 12-Sep, demo target 17/18-Sep.
 
 | Weeks | Focus |
 |---|---|
@@ -37,7 +37,7 @@ Everything that doesn't need live AWS access is now done. The remaining work is 
 - PUBG API call volume reduced from 8 to ~5 calls per player search (cached `findCurrentSeasonId()`, reduced match-preview prefetch count) after live testing hit the 10 req/min rate limit after 1-2 searches.
 - Frontend UI redesigned per an explicit design brief: wider layout, sectioned cards (Player Overview / Season Performance / Recent Matches), rich match previews for the most recent few matches, reduced border radius, API-status indicator.
 - `api-test.sh` had its own real bug fixed (JSON id-extraction regex silently failed on spaced JSON, causing checks to be skipped while still reporting "0 failed") — now prints real status/body per call and surfaces skips as warnings.
-- `docs/ARCHITECTURE.md`: system context, component view, 6 sequence diagrams (Player Search, Match Analytics, Season Stats, AI Insights, S3 caching, DynamoDB history), data mapping, error flow, 13 design decisions, planned AWS architecture with a concrete "what's needed to turn it on" checklist.
+- `docs/deliverables/ARCHITECTURE.md`: system context, component view, 6 sequence diagrams (Player Search, Match Analytics, Season Stats, AI Insights, S3 caching, DynamoDB history), data mapping, error flow, 13 design decisions, planned AWS architecture with a concrete "what's needed to turn it on" checklist.
 - `docs/SOLUTION_ARCHITECTURE_DOCUMENT.md` and `docs/PROJECT_REPORT.md` drafted.
 - Demo dataset: user has identified ~10 candidate active players (starting from "TGLTN").
 - Decided to deploy via the RMIT-provided AWS Academy Learner Lab, not a personal AWS account.

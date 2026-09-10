@@ -4,7 +4,7 @@
 >
 > Before making any code changes, please read this document completely.
 
-**Note**: this is a copy of the backend repo's `docs/PROJECT_CONTEXT.md`, kept identical so both repos have the same accurate status (no more stale duplicate). References below to `docs/ARCHITECTURE.md` point to a file that only exists in **pubg-insight-backend** — this repo doesn't have its own copy of it.
+**Note**: this is a copy of the backend repo's `docs/decisions/PROJECT_CONTEXT.md`, kept identical so both repos have the same accurate status (no more stale duplicate). References below to `docs/deliverables/ARCHITECTURE.md` point to a file that only exists in **pubg-insight-backend** — this repo doesn't have its own copy of it.
 
 ---
 
@@ -343,7 +343,7 @@ Draft prose for both: `docs/SOLUTION_ARCHITECTURE_DOCUMENT.md` — copy/adapt di
 ## Project Report
 
 - **Related Work** (1 pt) — reference similar existing applications/products.
-- **System Architecture** (5 pts, the largest report criterion) — one or more diagrams that clearly show: (1) the full flow from each client interface operation through the system, (2) detailed interactions between all components, (3) the function of every component. See `docs/ARCHITECTURE.md` for the current working set of diagrams (system context, component view, per-feature sequence diagrams, data mapping, error flow) — it's the direct source material for this section. Keep it in sync as AWS integrations are added — it's worth as much as three AWS services combined.
+- **System Architecture** (5 pts, the largest report criterion) — one or more diagrams that clearly show: (1) the full flow from each client interface operation through the system, (2) detailed interactions between all components, (3) the function of every component. See `docs/deliverables/ARCHITECTURE.md` for the current working set of diagrams (system context, component view, per-feature sequence diagrams, data mapping, error flow) — it's the direct source material for this section. Keep it in sync as AWS integrations are added — it's worth as much as three AWS services combined.
 - **System Descriptions** (1 pt) — explain the purpose of each component used.
 - **Dataset / Data Structure / API Description** (1 pt) — describe the PUBG API data model, Gemini inputs/outputs, and internal data structures (DynamoDB items, S3 objects, etc.).
 - **References** (0.5 pt) — links/sources used during development.
@@ -411,7 +411,7 @@ Follow these principles.
 
 # Current Status
 
-Verified against actual source code, not commit messages or prior doc claims. See `docs/ARCHITECTURE.md` for full diagrams and design rationale, and `docs/TASK.md` for the live sprint/roadmap tracker.
+Verified against actual source code, not commit messages or prior doc claims. See `docs/deliverables/ARCHITECTURE.md` for full diagrams and design rationale, and `docs/decisions/TASK.md` for the live sprint/roadmap tracker.
 
 Actually done
 
@@ -420,7 +420,7 @@ Actually done
 - **Feature 3 (AI Insights / Gemini)** — code complete (client, DTOs, `insight/` feature composing Player+Match, prompt built from aggregated metrics only, tolerant response parsing), unit + integration tested. Not yet run against a real Gemini key.
 - **Feature 4 (Analysis History)** — DynamoDB integration code complete (`client/dynamodb`, `history/` feature), unit + integration tested. **Not deployed or run against real AWS** — no table exists yet, and the code couldn't even be compiled in the environment it was written in (no network access). Treat as "ready to test," not "verified."
 - S3 match-data caching (supports Feature 2 and reduces PUBG API load) — code complete (`client/s3`, wired into `MatchService` as a cache-aside layer with soft-fail on any cache error). Same caveat: not deployed, not compiled yet.
-- Frontend: full UI for Features 1-3, PUBG-branded MUI theme, redesigned per an explicit design brief (wider layout, sectioned cards, rich match previews, reduced border radius) — see `docs/ARCHITECTURE.md` design decisions.
+- Frontend: full UI for Features 1-3, PUBG-branded MUI theme, redesigned per an explicit design brief (wider layout, sectioned cards, rich match previews, reduced border radius) — see `docs/deliverables/ARCHITECTURE.md` design decisions.
 - Local baseline QA: error handling for PUBG/Gemini outages, timeouts, and rate limits (429 preserved distinctly from 502/500), server-side failure logging, frontend error-message differentiation by failure type, `check.sh` (compile+test) and `api-test.sh` (live HTTP smoke test, now prints real status/body per call after a real bug in its own id-extraction regex was found and fixed).
 - Real PUBG API call volume per search reduced from 8 to ~5 (cached season id, fewer auto-loaded match previews) after live testing hit the 10 req/min free-tier limit after 1-2 searches.
 - Solution Architecture Document and Project Report prose drafted (`docs/SOLUTION_ARCHITECTURE_DOCUMENT.md`, `docs/PROJECT_REPORT.md`).

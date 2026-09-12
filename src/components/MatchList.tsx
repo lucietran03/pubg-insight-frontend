@@ -126,26 +126,33 @@ interface DeltaMetric {
   seasonAvg: number;
 }
 
-// Renders one chip per metric, comparing this match's value against the player's season
-// average. Metrics with a zero season average are skipped entirely (division by zero
-// would produce a meaningless/Infinity percentage).
-function buildDeltaChips(metrics: DeltaMetric[]) {
+// Renders one compact tile per metric, comparing this match's value against the player's
+// season average. Metrics with a zero season average are skipped entirely (division by
+// zero would produce a meaningless/Infinity percentage).
+function buildDeltaTiles(metrics: DeltaMetric[]) {
   return metrics
     .filter((metric) => metric.seasonAvg !== 0)
     .map((metric) => {
       const pct = ((metric.matchValue - metric.seasonAvg) / metric.seasonAvg) * 100;
       const isBetter = pct >= 0;
       return (
-        <Chip
+        <Box
           key={metric.label}
-          label={`${metric.label}: ${isBetter ? "+" : ""}${pct.toFixed(0)}% vs your season avg`}
-          size="small"
           sx={{
-            bgcolor: isBetter ? "success.main" : "action.selected",
-            color: isBetter ? "success.contrastText" : "text.secondary",
-            fontWeight: 700,
+            bgcolor: "background.paper",
+            borderRadius: "6px",
+            py: 1,
+            px: 1,
+            textAlign: "center",
           }}
-        />
+        >
+          <Typography variant="body2" sx={{ fontWeight: 800, color: isBetter ? "success.main" : "error.main" }}>
+            {isBetter ? "▲" : "▼"} {Math.abs(pct).toFixed(0)}%
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+            {metric.label} vs season avg
+          </Typography>
+        </Box>
       );
     });
 }
@@ -278,9 +285,9 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
   const selectedState = selectedMatchId ? matchCache[selectedMatchId] : undefined;
   const selectedMatch = selectedState && selectedState !== "loading" && selectedState !== "error" ? selectedState : null;
 
-  const seasonDeltaChips =
+  const seasonDeltaTiles =
     selectedMatch && seasonStats
-      ? buildDeltaChips([
+      ? buildDeltaTiles([
           { label: "Damage dealt", matchValue: selectedMatch.damageDealt, seasonAvg: seasonStats.avgDamage },
           {
             label: "Time survived",
@@ -396,10 +403,22 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
             <StatTile label="Survived" value={`${Math.round(selectedMatch.timeSurvivedSeconds / 60)}m`} />
           </Box>
 
-          {seasonDeltaChips.length > 0 && (
-            <Stack direction="row" spacing={1} sx={{ mt: 1.5, flexWrap: "wrap" }}>
-              {seasonDeltaChips}
-            </Stack>
+          {seasonDeltaTiles.length > 0 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="overline" color="text.secondary">
+                Vs Season Average
+              </Typography>
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)" },
+                  gap: 1.5,
+                  mt: 0.5,
+                }}
+              >
+                {seasonDeltaTiles}
+              </Box>
+            </Box>
           )}
 
           {selectedMatchId && <AiInsights key={selectedMatchId} playerId={playerId} matchId={selectedMatchId} />}

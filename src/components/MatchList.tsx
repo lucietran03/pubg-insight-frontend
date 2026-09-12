@@ -202,6 +202,12 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
 
   return (
     <Box>
+      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+        Match data loads live from PUBG's own API, which limits how many requests can be
+        made per minute — loading can take a few seconds per match. This is a PUBG
+        platform limit, not an app performance issue.
+      </Typography>
+
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }, gap: 1.5 }}>
         {pageIds.map((matchId) => (
           <MatchCard

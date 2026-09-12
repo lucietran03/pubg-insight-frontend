@@ -5,7 +5,6 @@ import {
   Button,
   Card,
   CardContent,
-  Chip,
   CircularProgress,
   Stack,
   TextField,
@@ -19,6 +18,7 @@ import { getErrorMessage } from "../utils/errorMessage";
 import MatchList from "./MatchList";
 import PerformanceBreakdown from "./PerformanceBreakdown";
 import SeasonStats from "./SeasonStats";
+import SectionTitle from "./SectionTitle";
 
 function PlayerSearch() {
   const [name, setName] = useState("");
@@ -124,26 +124,40 @@ function PlayerSearch() {
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2 }}>
             <Card>
               <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-                <Typography variant="overline" color="text.secondary">
-                  PLAYER OVERVIEW
-                </Typography>
-                <Stack direction="row" spacing={1} sx={{ alignItems: "center", mt: 1, flexWrap: "wrap" }}>
-                  <Typography variant="h4" sx={{ fontWeight: 800, wordBreak: "break-word" }}>
-                    {player.name}
-                  </Typography>
-                  <Chip label={`Platform: ${player.shardId.toUpperCase()}`} size="small" color="secondary" />
+                <SectionTitle>Player Overview</SectionTitle>
+                <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+                  <Box
+                    sx={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: "50%",
+                      bgcolor: "primary.main",
+                      color: "background.default",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: 800,
+                      fontSize: "1.5rem",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {player.name.charAt(0).toUpperCase()}
+                  </Box>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 800, wordBreak: "break-word", lineHeight: 1.2 }}>
+                      {player.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25 }}>
+                      {player.shardId.toUpperCase()} · {player.recentMatchIds.length} matches (14 days)
+                    </Typography>
+                  </Box>
                 </Stack>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  {player.recentMatchIds.length} matches in the last 14 days
-                </Typography>
               </CardContent>
             </Card>
 
             <Card>
               <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-                <Typography variant="overline" color="text.secondary">
-                  SEASON PERFORMANCE
-                </Typography>
+                <SectionTitle>Season Performance</SectionTitle>
                 <SeasonStats
                   stats={seasonStats}
                   loading={seasonStatsLoading}
@@ -157,9 +171,7 @@ function PlayerSearch() {
           {seasonStats && (
             <Card sx={{ mt: 2 }}>
               <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-                <Typography variant="overline" color="text.secondary" gutterBottom>
-                  PERFORMANCE BREAKDOWN
-                </Typography>
+                <SectionTitle>Performance Breakdown</SectionTitle>
                 <PerformanceBreakdown stats={seasonStats} />
               </CardContent>
             </Card>
@@ -167,9 +179,7 @@ function PlayerSearch() {
 
           <Card sx={{ mt: 2 }}>
             <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-              <Typography variant="overline" color="text.secondary" gutterBottom>
-                RECENT MATCHES
-              </Typography>
+              <SectionTitle>Recent Matches</SectionTitle>
               <MatchList playerId={player.id} matchIds={player.recentMatchIds} />
             </CardContent>
           </Card>

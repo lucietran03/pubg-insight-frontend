@@ -1,24 +1,25 @@
-import { Box, Divider, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 import type { SeasonStats } from "../types/seasonStats";
 import DeltaIndicator from "./DeltaIndicator";
 import PerformanceRadar from "./PerformanceRadar";
+import SectionTitle from "./SectionTitle";
 import StatTile from "./StatTile";
 
 interface PerformanceBreakdownProps {
   stats: SeasonStats;
 }
 
-// Full-width card: the detailed stat grid + performance radar, split out of the compact
-// "Season Performance" card so that one stays balanced in height with "Player Overview".
+// LEFT (~45%): the 6 stat tiles, 2 columns x 3 rows. RIGHT (~55%): the radar, the visual
+// centerpiece of this card. Stacks to a single column on mobile, radar below the stats.
 function PerformanceBreakdown({ stats }: PerformanceBreakdownProps) {
   const comparison = stats.previousSeasonComparison;
 
   return (
-    <Box>
+    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "45% 1fr" }, gap: 3, alignItems: "center" }}>
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)", md: "repeat(6, 1fr)" },
+          gridTemplateColumns: "repeat(2, 1fr)",
           gap: 1.5,
         }}
       >
@@ -42,12 +43,10 @@ function PerformanceBreakdown({ stats }: PerformanceBreakdownProps) {
         <StatTile label="Longest Kill" value={`${stats.longestKillMeters.toFixed(0)}m`} />
       </Box>
 
-      <Divider sx={{ my: 2 }} />
-
-      <Typography variant="overline" color="text.secondary" sx={{ display: "block", textAlign: "center" }}>
-        Performance Radar
-      </Typography>
-      <PerformanceRadar scores={stats.radar} />
+      <Box>
+        <SectionTitle>Performance Radar</SectionTitle>
+        <PerformanceRadar scores={stats.radar} />
+      </Box>
     </Box>
   );
 }

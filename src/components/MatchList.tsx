@@ -97,24 +97,48 @@ function MatchCard({ state, selected, onClick }: MatchCardProps) {
         border: "1px solid",
         borderColor: selected ? "primary.main" : restingBorderColor,
         cursor: "pointer",
+        display: "flex",
+        flexDirection: "column",
+        gap: 1,
+        minHeight: 84,
       }}
     >
-      <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
-        <Typography variant="body2" sx={{ fontWeight: 700 }}>
-          {formatMatchDate(state.createdAt)} · Placement #{state.winPlace}
-        </Typography>
-        <Chip label={`Mode: ${state.gameMode}`} size="small" />
+      {/* Top: placement + date on the left, mode badge on the right. */}
+      <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start" }}>
+        <Stack direction="row" spacing={1} sx={{ alignItems: "baseline" }}>
+          <Typography variant="body2" sx={{ fontWeight: 800 }}>
+            #{state.winPlace}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {formatMatchDate(state.createdAt)}
+          </Typography>
+        </Stack>
+        <Chip label={state.gameMode} size="small" />
       </Stack>
-      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
-        Map: {state.mapName}
+
+      {/* Middle: the map gets its own line and visual room. */}
+      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+        {state.mapName}
       </Typography>
-      <Stack direction="row" spacing={1.5} sx={{ mt: 1 }}>
-        <Typography variant="caption" color="text.secondary">
-          {state.kills} kills
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          {state.damageDealt.toFixed(0)} dmg
-        </Typography>
+
+      {/* Bottom: kills left, damage right, so matches can be scanned at a glance. */}
+      <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-end", mt: "auto" }}>
+        <Box>
+          <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1 }}>
+            {state.kills}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Kills
+          </Typography>
+        </Box>
+        <Box sx={{ textAlign: "right" }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1 }}>
+            {state.damageDealt.toFixed(0)}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Damage
+          </Typography>
+        </Box>
       </Stack>
     </Box>
   );
@@ -141,16 +165,25 @@ function buildDeltaTiles(metrics: DeltaMetric[]) {
           sx={{
             bgcolor: "background.paper",
             borderRadius: "6px",
-            py: 1,
+            py: 1.5,
             px: 1,
             textAlign: "center",
           }}
         >
-          <Typography variant="body2" sx={{ fontWeight: 800, color: isBetter ? "success.main" : "error.main" }}>
+          {/* Largest: the percentage is the key insight, so it dominates visually. */}
+          <Typography
+            variant="h5"
+            sx={{ fontWeight: 800, lineHeight: 1, color: isBetter ? "success.main" : "error.main" }}
+          >
             {isBetter ? "▲" : "▼"} {Math.abs(pct).toFixed(0)}%
           </Typography>
+          {/* Secondary: which metric this is. */}
+          <Typography variant="body2" sx={{ fontWeight: 700, mt: 0.5 }}>
+            {metric.label}
+          </Typography>
+          {/* Caption: the comparison basis, smallest. */}
           <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-            {metric.label} vs season avg
+            vs season average
           </Typography>
         </Box>
       );
@@ -352,8 +385,13 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
 
       {selectedMatch && (
         <Box sx={{ mt: 2, bgcolor: "background.default", borderRadius: "6px", p: 2.5 }}>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 1, sm: 3 }} sx={{ alignItems: { sm: "center" } }}>
-            <Box sx={{ minWidth: 90 }}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={{ xs: 1.5, sm: 3 }}
+            sx={{ alignItems: { xs: "center", sm: "center" }, textAlign: { xs: "center", sm: "left" } }}
+          >
+            {/* LEFT: placement is the unambiguous visual anchor. */}
+            <Box sx={{ minWidth: { sm: 90 } }}>
               <Typography variant="overline" color="text.secondary">
                 Placement
               </Typography>
@@ -368,20 +406,27 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
                 #{selectedMatch.winPlace}
               </Typography>
             </Box>
-            <Box sx={{ flexGrow: 1 }}>
+
+            {/* CENTER: the map. */}
+            <Box sx={{ flexGrow: 1, textAlign: "center" }}>
               <Typography variant="overline" color="text.secondary">
                 Map
               </Typography>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mt: -0.5 }}>
                 {selectedMatch.mapName}
               </Typography>
-              <Stack direction="row" spacing={1} sx={{ alignItems: "center", mt: 0.5, flexWrap: "wrap" }}>
-                <Chip label={`Mode: ${selectedMatch.gameMode}`} size="small" />
-                <Typography variant="caption" color="text.secondary">
-                  {formatMatchDate(selectedMatch.createdAt, true)}
-                </Typography>
-              </Stack>
             </Box>
+
+            {/* RIGHT: mode badge + date. */}
+            <Stack
+              spacing={0.5}
+              sx={{ alignItems: { xs: "center", sm: "flex-end" }, minWidth: { sm: 140 } }}
+            >
+              <Chip label={`Mode: ${selectedMatch.gameMode}`} size="small" />
+              <Typography variant="caption" color="text.secondary">
+                {formatMatchDate(selectedMatch.createdAt, true)}
+              </Typography>
+            </Stack>
           </Stack>
 
           <Divider sx={{ my: 2 }} />

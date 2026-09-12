@@ -46,12 +46,12 @@ function SeasonStats({ stats, loading, error, onRetry }: SeasonStatsProps) {
 
   return (
     <Box sx={{ mt: 1 }}>
-      <PlayerIdentityCard archetype={stats.archetype} />
+      <PlayerIdentityCard archetype={stats.archetype} radar={stats.radar} />
 
-      <Typography variant="h3" sx={{ fontWeight: 800, color: "primary.main", lineHeight: 1 }}>
+      <Typography variant="h3" sx={{ fontWeight: 800, color: "primary.main", lineHeight: 1, pl: 0.25 }}>
         {(stats.winRate * 100).toFixed(1)}%
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25, pl: 0.25 }}>
         Season Win Rate · {stats.wins} wins / {stats.roundsPlayed} rounds (all modes)
       </Typography>
       {comparison && <DeltaIndicator deltaPct={comparison.winRateDeltaPct} />}

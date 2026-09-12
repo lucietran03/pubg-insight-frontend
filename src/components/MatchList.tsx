@@ -233,7 +233,7 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
 
       {hiddenCount > 0 && (
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1, textAlign: "center" }}>
-          Showing the {MAX_MATCHES_DISPLAYED} most recent matches ({hiddenCount} older not shown).
+          Showing the {MAX_MATCHES_DISPLAYED} most recent matches
         </Typography>
       )}
 

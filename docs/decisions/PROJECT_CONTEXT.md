@@ -273,12 +273,12 @@ using historical data.
 
 # AWS Environment
 
-Deployment target is the **RMIT-provided AWS Academy Learner Lab**, not a personal AWS account — chosen deliberately to avoid real billing risk while cost per-service isn't yet known. This has practical implications for how the AWS integrations below must be built:
+Deployment target is a **personal AWS account** (Free Tier + $100 promotional credit) — **superseded from the earlier RMIT AWS Academy Learner Lab decision (2026-09-13)**: the Lab's session-expiring credentials and no-custom-IAM-role restriction became too much friction this close to deadline. See backend `docs/decisions/AWS_SETUP.md` for setup steps.
 
-- **IAM**: Learner Lab does not allow creating custom IAM roles/policies — use the pre-provisioned Lab role (commonly named `LabRole` / `LabInstanceProfile`) as the execution role for Lambda, Elastic Beanstalk, etc. Don't design anything that assumes we can create our own IAM roles.
-- **Region**: Learner Lab typically locks you to a single region (often `us-east-1`). Confirm the actual region once logged in and use it consistently for every service — TODO: fill in once confirmed.
-- **Sessions time out**: compute resources can stop when a Lab session ends and need restarting before use (e.g. before a demo). Elastic Beanstalk mitigates the worst of this — its environment gets a stable URL (`*.elasticbeanstalk.com`) that survives the underlying EC2 instance restarting or getting a new IP between sessions, so we don't need to reconfigure anything, just restart the environment if it was stopped.
-- Budget is capped by the Lab itself, so cost overruns aren't a real risk here — but avoid leaving expensive resources (e.g. Athena queries over large scans) running unnecessarily anyway, as good practice.
+- **IAM**: a personal account can create its own IAM users/roles freely — a dedicated `pubg-insight-dev` IAM user (programmatic access only) holds the needed policies (S3/DynamoDB/Elastic Beanstalk full access, etc.), unlike the Lab's fixed `LabRole`.
+- **Region**: kept as `us-east-1` (matches the backend's existing default) — no longer region-restricted like the Lab was.
+- **Credentials don't expire**: the IAM user's access key is permanent, no per-session refresh needed. Never commit the downloaded access-key CSV to either repo.
+- **Real billing risk**: unlike the Lab, cost overruns here are real money once the $100 credit/Free Tier is exhausted — a Billing alarm should be set early.
 
 ---
 
@@ -424,18 +424,18 @@ Actually done
 - Local baseline QA: error handling for PUBG/Gemini outages, timeouts, and rate limits (429 preserved distinctly from 502/500), server-side failure logging, frontend error-message differentiation by failure type, `check.sh` (compile+test) and `api-test.sh` (live HTTP smoke test, now prints real status/body per call after a real bug in its own id-extraction regex was found and fixed).
 - Real PUBG API call volume per search reduced from 8 to ~5 (cached season id, fewer auto-loaded match previews) after live testing hit the 10 req/min free-tier limit after 1-2 searches.
 - Solution Architecture Document and Project Report prose drafted (`docs/SOLUTION_ARCHITECTURE_DOCUMENT.md`, `docs/PROJECT_REPORT.md`).
-- Assignment proposal approved by instructor. AWS deployment target decided: RMIT Learner Lab, not a personal account.
+- Assignment proposal approved by instructor. AWS deployment target decided: RMIT Learner Lab, not a personal account. **Superseded (2026-09-13)**: switched to a personal AWS account (see AWS Environment section above).
 
 Not yet done
 
 - **Feature 5 (Analytics Dashboard)** — no code yet; needs Athena set up and historical data to actually exist first.
-- Elastic Beanstalk, API Gateway, Lambda, Athena — no code at all; DynamoDB/S3 have code (see above) but none of the six approved AWS services have been deployed or tested against a real AWS account yet. All of this needs the user's own Learner Lab login (region confirmation, table/bucket creation, deployment).
+- Elastic Beanstalk, API Gateway, Lambda, Athena — no code at all; DynamoDB/S3 have code (see above) but none of the six approved AWS services have been deployed or tested against a real AWS account yet. All of this needs the user's own AWS console access (table/bucket creation, deployment).
 - Frontend routing — still a single page; will matter once History/Dashboard need separate views.
 - Running `mvn compile`/`mvn test` for the first time with real network access — this project's development environment never had network access to Maven Central, so no backend code (not just the new AWS code) has been compiler-verified yet, only reviewed by inspection.
 
 Next milestone
 
-- User: confirm Learner Lab region, create the DynamoDB table and S3 bucket, run `mvn compile`/`mvn test` for the first real compilation check, then deploy to Elastic Beanstalk.
+- User: create the DynamoDB table and S3 bucket, run `mvn compile`/`mvn test` for the first real compilation check, then deploy to Elastic Beanstalk.
 
 ---
 

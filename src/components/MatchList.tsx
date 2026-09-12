@@ -94,12 +94,12 @@ function MatchCard({ state, selected, onClick }: MatchCardProps) {
     >
       <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
         <Typography variant="body2" sx={{ fontWeight: 700 }}>
-          {formatMatchDate(state.createdAt)} · #{state.winPlace}
+          {formatMatchDate(state.createdAt)} · Placement #{state.winPlace}
         </Typography>
-        <Chip label={state.gameMode} size="small" />
+        <Chip label={`Mode: ${state.gameMode}`} size="small" />
       </Stack>
       <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
-        {state.mapName}
+        Map: {state.mapName}
       </Typography>
       <Stack direction="row" spacing={1.5} sx={{ mt: 1 }}>
         <Typography variant="caption" color="text.secondary">
@@ -264,11 +264,14 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
               </Typography>
             </Box>
             <Box sx={{ flexGrow: 1 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+              <Typography variant="overline" color="text.secondary">
+                Map
+              </Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, mt: -0.5 }}>
                 {selectedMatch.mapName}
               </Typography>
               <Stack direction="row" spacing={1} sx={{ alignItems: "center", mt: 0.5, flexWrap: "wrap" }}>
-                <Chip label={selectedMatch.gameMode} size="small" />
+                <Chip label={`Mode: ${selectedMatch.gameMode}`} size="small" />
                 <Typography variant="caption" color="text.secondary">
                   {formatMatchDate(selectedMatch.createdAt, true)}
                 </Typography>

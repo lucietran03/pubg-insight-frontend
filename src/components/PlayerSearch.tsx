@@ -99,7 +99,7 @@ function PlayerSearch() {
                   <Typography variant="h4" sx={{ fontWeight: 800, wordBreak: "break-word" }}>
                     {player.name}
                   </Typography>
-                  <Chip label={player.shardId.toUpperCase()} size="small" color="secondary" />
+                  <Chip label={`Platform: ${player.shardId.toUpperCase()}`} size="small" color="secondary" />
                 </Stack>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                   {player.recentMatchIds.length} matches in the last 14 days

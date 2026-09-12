@@ -51,6 +51,10 @@ function classificationLabel(axisScore: number, otherScores: number[]): string {
   return "Emerging trait";
 }
 
+// Hierarchy, top to bottom: archetype title alone (the hero of this block) -> supporting
+// classification metadata, demoted to small/secondary so it never competes with the title
+// on the same line -> short description. The win-rate hero metric and its supporting
+// stats live below this component, in SeasonStats.tsx.
 function PlayerIdentityCard({ archetype, radar }: PlayerIdentityCardProps) {
   const axis = ARCHETYPE_AXIS[archetype];
   const allScores = Object.values(radar);
@@ -61,33 +65,33 @@ function PlayerIdentityCard({ archetype, radar }: PlayerIdentityCardProps) {
   const spread = Math.max(...allScores) - Math.min(...allScores);
 
   return (
-    <Box sx={{ mb: 1 }}>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "baseline",
-          columnGap: 1,
-          rowGap: 0.25,
-          flexWrap: "wrap",
-          borderLeft: "3px solid",
-          borderColor: "primary.main",
-          pl: 1.25,
-        }}
+    <Box sx={{ mb: 1.5, borderLeft: "3px solid", borderColor: "primary.main", pl: 1.25 }}>
+      <Typography
+        variant="h5"
+        component="h3"
+        sx={{ fontWeight: 800, color: "primary.main", letterSpacing: 0.2, lineHeight: 1.15 }}
       >
-        <Typography
-          variant="h6"
-          component="h3"
-          sx={{ fontWeight: 800, color: "primary.main", letterSpacing: 0.2, lineHeight: 1.15 }}
-        >
-          {archetype}
-        </Typography>
-        <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>
-          {axis && axisScore !== undefined
-            ? `${AXIS_LABELS[axis]} ${axisScore}/100 · ${classificationLabel(axisScore, otherScores)}`
-            : `Even spread · ${spread}pt range across all roles`}
-        </Typography>
+        {archetype}
+      </Typography>
+
+      <Box sx={{ mt: 0.5 }}>
+        {axis && axisScore !== undefined ? (
+          <>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontWeight: 700 }}>
+              {AXIS_LABELS[axis]} {axisScore}/100
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+              {classificationLabel(axisScore, otherScores)}
+            </Typography>
+          </>
+        ) : (
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontWeight: 700 }}>
+            Even spread · {spread}pt range across all roles
+          </Typography>
+        )}
       </Box>
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, pl: 1.25 }}>
+
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
         {ARCHETYPE_BLURBS[archetype] ?? "Playstyle profile derived from this season's stats."}
       </Typography>
     </Box>

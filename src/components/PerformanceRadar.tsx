@@ -16,11 +16,11 @@ const AXES: { key: keyof RadarScores; label: string }[] = [
   { key: "survival", label: "Survival" },
 ];
 
-const WIDTH = 320;
-const HEIGHT = 300;
+const WIDTH = 350;
+const HEIGHT = 325;
 const CENTER_X = WIDTH / 2;
 const CENTER_Y = HEIGHT / 2 + 5;
-const MAX_RADIUS = 76;
+const MAX_RADIUS = 84;
 const LABEL_RADIUS = MAX_RADIUS * 1.35;
 const RING_FRACTIONS = [0.33, 0.66, 1];
 
@@ -59,7 +59,7 @@ function PerformanceRadar({ scores }: PerformanceRadarProps) {
     <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        style={{ width: "100%", maxWidth: 340, height: "auto" }}
+        style={{ width: "100%", maxWidth: 380, height: "auto" }}
         role="img"
         aria-label="Performance radar chart"
       >

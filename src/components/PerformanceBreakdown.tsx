@@ -2,7 +2,6 @@ import { Box } from "@mui/material";
 import type { SeasonStats } from "../types/seasonStats";
 import DeltaIndicator from "./DeltaIndicator";
 import PerformanceRadar from "./PerformanceRadar";
-import SectionTitle from "./SectionTitle";
 import StatTile from "./StatTile";
 
 interface PerformanceBreakdownProps {
@@ -44,7 +43,6 @@ function PerformanceBreakdown({ stats }: PerformanceBreakdownProps) {
       </Box>
 
       <Box>
-        <SectionTitle>Performance Radar</SectionTitle>
         <PerformanceRadar scores={stats.radar} />
       </Box>
     </Box>

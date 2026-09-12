@@ -60,6 +60,7 @@ export const mockInsight: Insight = {
   strengths: ["High headshot rate", "Efficient rotations", "Good damage output"],
   weaknesses: ["Low survival time in the early game", "Exposed positioning in open areas"],
   recommendations: ["Rotate earlier to avoid the circle edge", "Find cover before engaging at range"],
+  source: "gemini",
 };
 
 export function getMockMatch(matchId: string): Match | undefined {

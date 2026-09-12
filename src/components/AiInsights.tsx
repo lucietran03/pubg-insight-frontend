@@ -83,6 +83,11 @@ function AiInsights({ playerId, matchId }: AiInsightsProps) {
           <Typography variant="caption" color="primary.main" sx={{ fontWeight: 700 }}>
             AI PERFORMANCE SUMMARY
           </Typography>
+          {insight.source !== "gemini" && (
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+              Basic summary — AI is temporarily unavailable, showing a simplified breakdown instead
+            </Typography>
+          )}
           <Typography variant="body2" sx={{ mt: 0.5 }}>
             {insight.summary}
           </Typography>

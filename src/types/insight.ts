@@ -3,4 +3,5 @@ export interface Insight {
   strengths: string[];
   weaknesses: string[];
   recommendations: string[];
+  source: string;
 }

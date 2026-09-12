@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   Box,
@@ -12,9 +12,12 @@ import {
   Typography,
 } from "@mui/material";
 import { searchPlayer } from "../services/playerService";
+import { getSeasonStats } from "../services/seasonStatsService";
 import type { Player } from "../types/player";
+import type { SeasonStats as SeasonStatsData } from "../types/seasonStats";
 import { getErrorMessage } from "../utils/errorMessage";
 import MatchList from "./MatchList";
+import PerformanceBreakdown from "./PerformanceBreakdown";
 import SeasonStats from "./SeasonStats";
 
 function PlayerSearch() {
@@ -23,6 +26,32 @@ function PlayerSearch() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetched once here (not inside SeasonStats) so both the compact "Season Performance"
+  // card and the full-width "Performance Breakdown" card below it can share the same
+  // data without a duplicate PUBG-backed call.
+  const [seasonStats, setSeasonStats] = useState<SeasonStatsData | null>(null);
+  const [seasonStatsLoading, setSeasonStatsLoading] = useState(false);
+  const [seasonStatsError, setSeasonStatsError] = useState<string | null>(null);
+  const [seasonStatsRetryToken, setSeasonStatsRetryToken] = useState(0);
+
+  // The synchronous "start loading" resets happen in the two event handlers below (search,
+  // retry), not here - a `set-state-in-effect` lint rule forbids calling setState directly
+  // in an effect body; only the async .then/.catch/.finally callbacks are allowed to.
+  useEffect(() => {
+    if (!player) return;
+
+    getSeasonStats(player.id)
+      .then((result) => setSeasonStats(result))
+      .catch((err) => setSeasonStatsError(getErrorMessage(err, "No season stats found for this player.")))
+      .finally(() => setSeasonStatsLoading(false));
+  }, [player, seasonStatsRetryToken]);
+
+  const handleSeasonStatsRetry = () => {
+    setSeasonStatsLoading(true);
+    setSeasonStatsError(null);
+    setSeasonStatsRetryToken((token) => token + 1);
+  };
+
   const handleSearch = async () => {
     const trimmedName = name.trim();
     if (!trimmedName) return;
@@ -30,10 +59,13 @@ function PlayerSearch() {
     setLoading(true);
     setError(null);
     setPlayer(null);
+    setSeasonStats(null);
+    setSeasonStatsError(null);
 
     try {
       const result = await searchPlayer(trimmedName);
       setPlayer(result);
+      setSeasonStatsLoading(true);
     } catch (err) {
       setError(getErrorMessage(err, `Could not find player "${trimmedName}"`));
     } finally {
@@ -112,10 +144,26 @@ function PlayerSearch() {
                 <Typography variant="overline" color="text.secondary">
                   SEASON PERFORMANCE
                 </Typography>
-                <SeasonStats playerId={player.id} />
+                <SeasonStats
+                  stats={seasonStats}
+                  loading={seasonStatsLoading}
+                  error={seasonStatsError}
+                  onRetry={handleSeasonStatsRetry}
+                />
               </CardContent>
             </Card>
           </Box>
+
+          {seasonStats && (
+            <Card sx={{ mt: 2 }}>
+              <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+                <Typography variant="overline" color="text.secondary" gutterBottom>
+                  PERFORMANCE BREAKDOWN
+                </Typography>
+                <PerformanceBreakdown stats={seasonStats} />
+              </CardContent>
+            </Card>
+          )}
 
           <Card sx={{ mt: 2 }}>
             <CardContent sx={{ p: { xs: 2, md: 3 } }}>

@@ -16,7 +16,7 @@ const AXES: { key: keyof RadarScores; label: string }[] = [
 ];
 
 const WIDTH = 300;
-const HEIGHT = 260;
+const HEIGHT = 285;
 const CENTER_X = WIDTH / 2;
 const CENTER_Y = HEIGHT / 2 + 5;
 const MAX_RADIUS = 70;
@@ -70,9 +70,13 @@ function PerformanceRadar({ scores }: PerformanceRadarProps) {
         {AXES.map((axis, i) => {
           const { x, y } = pointAt(i, LABEL_RADIUS);
           const anchor = Math.abs(x - CENTER_X) < 4 ? "middle" : x > CENTER_X ? "start" : "end";
+          const value = Math.round(Math.max(0, Math.min(100, scores[axis.key])));
           return (
             <text key={axis.key} x={x} y={y} textAnchor={anchor} dominantBaseline="middle" fontSize={11} fill={theme.palette.text.secondary}>
               {axis.label}
+              <tspan x={x} dy="1.3em" fontSize={13} fontWeight={700} fill={theme.palette.primary.main}>
+                {value}
+              </tspan>
             </text>
           );
         })}

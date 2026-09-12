@@ -38,6 +38,13 @@ function App() {
       <Container maxWidth="xl" sx={{ py: { xs: 2.5, md: 4 } }}>
         <PlayerSearch />
       </Container>
+      <Box sx={{ borderTop: "1px solid", borderColor: "divider", mt: 2 }}>
+        <Container maxWidth="xl">
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", textAlign: "center", py: 2 }}>
+            Tran Dong Nghi · s3914633 · RMIT Vietnam University
+          </Typography>
+        </Container>
+      </Box>
     </Box>
   );
 }

@@ -32,6 +32,49 @@ function InsightChipRow({ label, items, color }: InsightChipRowProps) {
   );
 }
 
+interface InsightTextBlockProps {
+  label: string;
+  text: string;
+}
+
+function InsightTextBlock({ label, text }: InsightTextBlockProps) {
+  if (!text) return null;
+
+  return (
+    <Box sx={{ mt: 1.5 }}>
+      <Typography variant="caption" color="text.secondary">
+        {label}
+      </Typography>
+      <Typography variant="body2" sx={{ mt: 0.5 }}>
+        {text}
+      </Typography>
+    </Box>
+  );
+}
+
+// Data-driven list of AI coach sections rendered after the summary, so adding another
+// section (list-shaped or prose-shaped) is a one-line change here rather than a
+// structural rewrite of the component. Order here is the render order.
+type InsightSection =
+  | { kind: "list"; label: string; items: string[]; color: "success" | "warning" | "info" }
+  | { kind: "text"; label: string; text: string };
+
+function buildInsightSections(insight: Insight): InsightSection[] {
+  return [
+    { kind: "list", label: "STRENGTHS", items: insight.strengths, color: "success" },
+    { kind: "list", label: "WEAKNESSES", items: insight.weaknesses, color: "warning" },
+    { kind: "list", label: "RECOMMENDATIONS", items: insight.recommendations, color: "info" },
+    { kind: "text", label: "PLAYSTYLE ANALYSIS", text: insight.playstyle },
+    { kind: "text", label: "SEASON PROGRESS", text: insight.seasonProgress },
+    { kind: "list", label: "RISK FACTORS", items: insight.riskFactors, color: "warning" },
+    { kind: "list", label: "TRAINING PRIORITIES", items: insight.trainingPriorities, color: "info" },
+  ];
+}
+
+function sectionHasContent(section: InsightSection): boolean {
+  return section.kind === "list" ? section.items.length > 0 : section.text.length > 0;
+}
+
 function AiInsights({ playerId, matchId }: AiInsightsProps) {
   const [insight, setInsight] = useState<Insight | null>(null);
   const [loading, setLoading] = useState(false);
@@ -92,13 +135,23 @@ function AiInsights({ playerId, matchId }: AiInsightsProps) {
             {insight.summary}
           </Typography>
 
-          {(insight.strengths.length > 0 ||
-            insight.weaknesses.length > 0 ||
-            insight.recommendations.length > 0) && <Divider sx={{ my: 1.5 }} />}
+          {(() => {
+            const sections = buildInsightSections(insight);
+            const visibleSections = sections.filter(sectionHasContent);
 
-          <InsightChipRow label="STRENGTHS" items={insight.strengths} color="success" />
-          <InsightChipRow label="WEAKNESSES" items={insight.weaknesses} color="warning" />
-          <InsightChipRow label="RECOMMENDATIONS" items={insight.recommendations} color="info" />
+            return (
+              <>
+                {visibleSections.length > 0 && <Divider sx={{ my: 1.5 }} />}
+                {visibleSections.map((section) =>
+                  section.kind === "list" ? (
+                    <InsightChipRow key={section.label} label={section.label} items={section.items} color={section.color} />
+                  ) : (
+                    <InsightTextBlock key={section.label} label={section.label} text={section.text} />
+                  )
+                )}
+              </>
+            );
+          })()}
         </Box>
       )}
     </Box>

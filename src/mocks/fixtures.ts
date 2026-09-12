@@ -52,6 +52,21 @@ export const mockSeasonStats: SeasonStats = {
   wins: 9,
   roundsPlayed: 134,
   winRate: 9 / 134,
+  avgDamage: 310,
+  killDeathRatio: 1.8,
+  headshotRate: 0.38,
+  top10Rate: 0.42,
+  avgSurvivalSeconds: 780,
+  longestKillMeters: 187,
+  radar: { combat: 70, survival: 65, precision: 76, aggression: 62, support: 40, consistency: 42 },
+  archetype: "Precision Hunter",
+  previousSeasonComparison: {
+    winRateDeltaPct: 18,
+    avgDamageDeltaPct: 9,
+    killDeathRatioDeltaPct: 12,
+    headshotRateDeltaPct: -5,
+    top10RateDeltaPct: 6,
+  },
 };
 
 export const mockInsight: Insight = {
@@ -60,6 +75,12 @@ export const mockInsight: Insight = {
   strengths: ["High headshot rate", "Efficient rotations", "Good damage output"],
   weaknesses: ["Low survival time in the early game", "Exposed positioning in open areas"],
   recommendations: ["Rotate earlier to avoid the circle edge", "Find cover before engaging at range"],
+  playstyle:
+    "As a Precision Hunter, your damage comes from clean, long-range engagements rather than close-quarters aggression - this match followed that pattern, with kills concentrated at range instead of in the open.",
+  seasonProgress:
+    "Your season win rate and average damage have both been climbing over your last several matches, while survival time has stayed roughly flat - accuracy is driving the improvement more than staying alive longer.",
+  riskFactors: ["Support score is well below your other radar axes", "Early-game deaths are more common than your season average"],
+  trainingPriorities: ["Practice early-game positioning to reduce risky third-partying", "Work on squad support actions to round out your profile"],
   source: "gemini",
 };
 

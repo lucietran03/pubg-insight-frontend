@@ -1,10 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { Alert, Box, Chip, Divider, Pagination, Skeleton, Stack, Typography } from "@mui/material";
 import { getMatchStats } from "../services/matchService";
+import { getSeasonStats } from "../services/seasonStatsService";
 import type { Match } from "../types/match";
+import type { SeasonStats } from "../types/seasonStats";
 import { getErrorMessage } from "../utils/errorMessage";
 import AiInsights from "./AiInsights";
 import StatTile from "./StatTile";
+
+// How long a page's match fetch must be in flight before we tell the user it's the
+// backend's blocking rate limiter (not a stall) - short enough to reassure on a slow
+// page, long enough not to flash on a normal fast load.
+const SLOW_LOAD_WARNING_MS = 4000;
 
 // Cap on how many matches this component will ever page through, regardless of how many
 // PUBG actually returns for the player (up to ~14 days' worth, which can be dozens for
@@ -113,6 +120,36 @@ function MatchCard({ state, selected, onClick }: MatchCardProps) {
   );
 }
 
+interface DeltaMetric {
+  label: string;
+  matchValue: number;
+  seasonAvg: number;
+}
+
+// Renders one chip per metric, comparing this match's value against the player's season
+// average. Metrics with a zero season average are skipped entirely (division by zero
+// would produce a meaningless/Infinity percentage).
+function buildDeltaChips(metrics: DeltaMetric[]) {
+  return metrics
+    .filter((metric) => metric.seasonAvg !== 0)
+    .map((metric) => {
+      const pct = ((metric.matchValue - metric.seasonAvg) / metric.seasonAvg) * 100;
+      const isBetter = pct >= 0;
+      return (
+        <Chip
+          key={metric.label}
+          label={`${metric.label}: ${isBetter ? "+" : ""}${pct.toFixed(0)}% vs your season avg`}
+          size="small"
+          sx={{
+            bgcolor: isBetter ? "success.main" : "action.selected",
+            color: isBetter ? "success.contrastText" : "text.secondary",
+            fontWeight: 700,
+          }}
+        />
+      );
+    });
+}
+
 function SelectedMatchSkeleton() {
   return (
     <Box sx={{ mt: 2, bgcolor: "background.default", borderRadius: "6px", p: 2.5 }}>
@@ -147,6 +184,15 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [selectedError, setSelectedError] = useState<string | null>(null);
 
+  // Season stats are only needed once a match is selected (for the delta chips below), so
+  // we deliberately skip fetching them on initial page load to stay within the shared
+  // rate-limit budget. Fetched once per player search and cached in state - re-selecting
+  // a different match never re-fetches it.
+  const [seasonStats, setSeasonStats] = useState<SeasonStats | null>(null);
+  const seasonStatsFetchedRef = useRef(false);
+
+  const [showSlowLoadNotice, setShowSlowLoadNotice] = useState(false);
+
   // Lets the page-fetch effect below read the latest cache without needing matchCache
   // itself as a dependency (which would re-run the fetch on every single result).
   const matchCacheRef = useRef(matchCache);
@@ -166,6 +212,25 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
         .catch(() => setMatchCache((prev) => ({ ...prev, [matchId]: "error" })));
     });
   }, [playerId, matchIds, page]);
+
+  // True while any card on the current page is still waiting on its PUBG fetch.
+  const isPageLoading = pageIds.some((matchId) => {
+    const state = matchCache[matchId];
+    return state === undefined || state === "loading";
+  });
+
+  // Starts a timer as soon as the page's fetches go in flight; if they're still not done
+  // after SLOW_LOAD_WARNING_MS, the backend's blocking rate limiter is almost certainly
+  // queuing this page's requests, so we surface a more specific message. Cleared as soon
+  // as loading finishes (isPageLoading flips false) or the page changes.
+  useEffect(() => {
+    if (!isPageLoading) return;
+    const timer = setTimeout(() => setShowSlowLoadNotice(true), SLOW_LOAD_WARNING_MS);
+    return () => {
+      clearTimeout(timer);
+      setShowSlowLoadNotice(false);
+    };
+  }, [isPageLoading, page]);
 
   // Also doubles as the retry action: clicking an already-failed card re-runs this, and
   // since its cache entry is "error" (not a loaded Match), the guard below falls through
@@ -189,6 +254,19 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
     }
   };
 
+  // Fires once, the first time a match is selected - not on initial page load. This is a
+  // deliberate one-time extra PUBG call per player search (acceptable against the shared
+  // rate-limit budget) so the delta chips below have something to compare against.
+  useEffect(() => {
+    if (selectedMatchId === null || seasonStatsFetchedRef.current) return;
+    seasonStatsFetchedRef.current = true;
+    getSeasonStats(playerId)
+      .then(setSeasonStats)
+      .catch(() => {
+        // Non-critical: the delta chips simply won't render without season stats.
+      });
+  }, [selectedMatchId, playerId]);
+
   if (matchIds.length === 0) {
     return (
       <Typography color="text.secondary" variant="body2">
@@ -200,6 +278,19 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
   const selectedState = selectedMatchId ? matchCache[selectedMatchId] : undefined;
   const selectedMatch = selectedState && selectedState !== "loading" && selectedState !== "error" ? selectedState : null;
 
+  const seasonDeltaChips =
+    selectedMatch && seasonStats
+      ? buildDeltaChips([
+          { label: "Damage dealt", matchValue: selectedMatch.damageDealt, seasonAvg: seasonStats.avgDamage },
+          {
+            label: "Time survived",
+            matchValue: selectedMatch.timeSurvivedSeconds,
+            seasonAvg: seasonStats.avgSurvivalSeconds,
+          },
+          { label: "Headshot rate", matchValue: selectedMatch.headshotRate, seasonAvg: seasonStats.headshotRate },
+        ])
+      : [];
+
   return (
     <Box>
       <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
@@ -207,6 +298,13 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
         made per minute — loading can take a few seconds per match. This is a PUBG
         platform limit, not an app performance issue.
       </Typography>
+
+      {showSlowLoadNotice && (
+        <Alert severity="info" sx={{ mb: 1.5 }}>
+          Still loading — PUBG's shared rate limit means this page can take up to ~10
+          seconds when a lot of requests are queued. Hang tight, it will finish shortly.
+        </Alert>
+      )}
 
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }, gap: 1.5 }}>
         {pageIds.map((matchId) => (
@@ -298,7 +396,13 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
             <StatTile label="Survived" value={`${Math.round(selectedMatch.timeSurvivedSeconds / 60)}m`} />
           </Box>
 
-          {selectedMatchId && <AiInsights playerId={playerId} matchId={selectedMatchId} />}
+          {seasonDeltaChips.length > 0 && (
+            <Stack direction="row" spacing={1} sx={{ mt: 1.5, flexWrap: "wrap" }}>
+              {seasonDeltaChips}
+            </Stack>
+          )}
+
+          {selectedMatchId && <AiInsights key={selectedMatchId} playerId={playerId} matchId={selectedMatchId} />}
         </Box>
       )}
     </Box>

@@ -10,9 +10,10 @@ interface WeaponBreakdownProps {
 }
 
 // New, telemetry-derived section for the already-existing Selected Match panel
-// (see MatchList.tsx) - a per-weapon kill breakdown and a shot-distance histogram, neither
-// of which the PUBG summary/season-stats APIs this app otherwise relies on can produce (they
-// don't expose which weapon got each kill, or at what range). Backed by a brand new endpoint
+// (see MatchList.tsx) - a per-weapon kill breakdown, a shot-distance histogram, and a
+// hits-by-body-part breakdown, none of which the PUBG summary/season-stats APIs this app
+// otherwise relies on can produce (they don't expose which weapon got each kill, at what
+// range, or where each hit landed). Backed by a brand new endpoint
 // (GET /api/players/{playerId}/matches/{matchId}/weapons) that parses this one match's raw
 // telemetry file server-side.
 //
@@ -47,13 +48,19 @@ function WeaponBreakdown({ playerId, matchId }: WeaponBreakdownProps) {
   // Only show distance buckets that actually have a kill in them - an empty "120-300m: 0"
   // row for every match would be noise, not signal.
   const shotDistances = (breakdown?.shotDistances ?? []).filter((bucket) => bucket.kills > 0);
+  // Same convention: only show body parts that were actually hit at least once. The backend
+  // always returns all five labels (even at 0) so it can add new ones later without a
+  // frontend change; filtering zero rows here is purely a display choice.
+  const bodyPartDamage = (breakdown?.bodyPartDamage ?? []).filter((part) => part.hits > 0);
 
-  if (weapons.length === 0 && shotDistances.length === 0) {
+  if (weapons.length === 0 && shotDistances.length === 0 && bodyPartDamage.length === 0) {
     return null;
   }
 
   const maxWeaponKills = weapons.length > 0 ? Math.max(...weapons.map((w) => w.kills)) : 1;
   const maxDistanceKills = shotDistances.length > 0 ? Math.max(...shotDistances.map((b) => b.kills)) : 1;
+  const totalBodyPartHits = bodyPartDamage.reduce((sum, part) => sum + part.hits, 0);
+  const maxBodyPartHits = bodyPartDamage.length > 0 ? Math.max(...bodyPartDamage.map((p) => p.hits)) : 1;
 
   return (
     <Box sx={{ mt: 2 }}>
@@ -109,6 +116,41 @@ function WeaponBreakdown({ playerId, matchId }: WeaponBreakdownProps) {
                   </Box>
                   <Typography variant="body2" color="text.secondary" sx={{ minWidth: 56, textAlign: "right" }}>
                     {bucket.kills} {bucket.kills === 1 ? "kill" : "kills"}
+                  </Typography>
+                </Stack>
+              ))}
+            </Stack>
+          </Box>
+        )}
+
+        {(weapons.length > 0 || shotDistances.length > 0) && bodyPartDamage.length > 0 && (
+          <Divider sx={{ my: 1.5 }} />
+        )}
+
+        {bodyPartDamage.length > 0 && (
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+              Hits by body part
+            </Typography>
+            <Stack spacing={1}>
+              {bodyPartDamage.map((part) => (
+                <Stack key={part.label} direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700, minWidth: 96 }}>
+                    {part.label}
+                  </Typography>
+                  <Box sx={{ flexGrow: 1, height: 8, borderRadius: 4, bgcolor: "background.default" }}>
+                    <Box
+                      sx={{
+                        height: "100%",
+                        borderRadius: 4,
+                        bgcolor: "info.main",
+                        width: `${(part.hits / maxBodyPartHits) * 100}%`,
+                      }}
+                    />
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ minWidth: 88, textAlign: "right" }}>
+                    {part.hits} {part.hits === 1 ? "hit" : "hits"}
+                    {totalBodyPartHits > 0 ? ` (${Math.round((part.hits / totalBodyPartHits) * 100)}%)` : ""}
                   </Typography>
                 </Stack>
               ))}

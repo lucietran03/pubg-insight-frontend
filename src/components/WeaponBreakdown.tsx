@@ -1,13 +1,88 @@
 import { useEffect, useState } from "react";
 import { Box, Divider, Stack, Typography } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { getWeaponBreakdown } from "../services/weaponService";
-import type { MatchCombatBreakdown } from "../types/weaponKill";
+import type { MatchCombatBreakdown, WeaponKill } from "../types/weaponKill";
 import BodyPartDiagram from "./BodyPartDiagram";
 import SectionTitle from "./SectionTitle";
 
 interface WeaponBreakdownProps {
   playerId: string;
   matchId: string;
+}
+
+// Small "premium micro-header" used for each sub-section inside this panel (By Weapon / By
+// Shot Distance / By Body Part) - a colored dot + bold uppercase caption, consistent across
+// all three instead of each using a plain muted caption.
+function SubLabel({ children }: { children: string }) {
+  return (
+    <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 1 }}>
+      <Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: "primary.main" }} />
+      <Typography
+        variant="caption"
+        sx={{ fontWeight: 800, letterSpacing: 0.8, color: "text.secondary", textTransform: "uppercase" }}
+      >
+        {children}
+      </Typography>
+    </Stack>
+  );
+}
+
+const RING_SIZE = 76;
+const RING_RADIUS = 40;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
+// One weapon as a radial "kill share" gauge card - a small ring chart (SVG stroke-dasharray
+// trick, no charting library, same "hand-rolled over a library" convention as
+// PerformanceRadar.tsx) instead of another horizontal bar row. The top weapon gets a gold
+// card border so the eye lands there first, like a small leaderboard.
+function WeaponGaugeCard({ weapon, share, isTop }: { weapon: WeaponKill; share: number; isTop: boolean }) {
+  const theme = useTheme();
+  const arcLength = share * RING_CIRCUMFERENCE;
+
+  return (
+    <Box
+      sx={{
+        flex: "1 1 96px",
+        minWidth: 96,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        p: 1.25,
+        borderRadius: "10px",
+        bgcolor: "background.default",
+        border: "1px solid",
+        borderColor: isTop ? "primary.main" : "transparent",
+      }}
+    >
+      <svg width={RING_SIZE} height={RING_SIZE} viewBox="0 0 100 100" role="img" aria-label={`${weapon.weapon} kill share`}>
+        <circle cx={50} cy={50} r={RING_RADIUS} fill="none" stroke={theme.palette.divider} strokeWidth={9} />
+        <circle
+          cx={50}
+          cy={50}
+          r={RING_RADIUS}
+          fill="none"
+          stroke={theme.palette.primary.main}
+          strokeWidth={9}
+          strokeLinecap="round"
+          strokeDasharray={`${arcLength} ${RING_CIRCUMFERENCE}`}
+          transform="rotate(-90 50 50)"
+        />
+        <text x={50} y={47} textAnchor="middle" fontSize={24} fontWeight={800} fill={theme.palette.text.primary}>
+          {weapon.kills}
+        </text>
+        <text x={50} y={64} textAnchor="middle" fontSize={11} fill={theme.palette.text.secondary}>
+          {Math.round(share * 100)}%
+        </text>
+      </svg>
+      <Typography
+        variant="body2"
+        sx={{ fontWeight: isTop ? 800 : 700, mt: 0.5, textAlign: "center", lineHeight: 1.2 }}
+      >
+        {weapon.weapon}
+      </Typography>
+    </Box>
+  );
 }
 
 // New, telemetry-derived section for the already-existing Selected Match panel
@@ -58,7 +133,7 @@ function WeaponBreakdown({ playerId, matchId }: WeaponBreakdownProps) {
     return null;
   }
 
-  const maxWeaponKills = weapons.length > 0 ? Math.max(...weapons.map((w) => w.kills)) : 1;
+  const totalWeaponKills = weapons.reduce((sum, w) => sum + w.kills, 0);
   const maxDistanceKills = shotDistances.length > 0 ? Math.max(...shotDistances.map((b) => b.kills)) : 1;
 
   return (
@@ -66,37 +141,26 @@ function WeaponBreakdown({ playerId, matchId }: WeaponBreakdownProps) {
       <SectionTitle>Weapons Used</SectionTitle>
       <Box sx={{ bgcolor: "background.paper", borderRadius: "6px", p: 1.5 }}>
         {weapons.length > 0 && (
-          <Stack spacing={1}>
-            {weapons.map((weapon) => (
-              <Stack key={weapon.weapon} direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-                <Typography variant="body2" sx={{ fontWeight: 700, minWidth: 96 }}>
-                  {weapon.weapon}
-                </Typography>
-                <Box sx={{ flexGrow: 1, height: 8, borderRadius: 4, bgcolor: "background.default" }}>
-                  <Box
-                    sx={{
-                      height: "100%",
-                      borderRadius: 4,
-                      bgcolor: "primary.main",
-                      width: `${(weapon.kills / maxWeaponKills) * 100}%`,
-                    }}
-                  />
-                </Box>
-                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 56, textAlign: "right" }}>
-                  {weapon.kills} {weapon.kills === 1 ? "kill" : "kills"}
-                </Typography>
-              </Stack>
-            ))}
-          </Stack>
+          <Box>
+            <SubLabel>By Weapon</SubLabel>
+            <Stack direction="row" spacing={1.25} sx={{ flexWrap: "wrap" }}>
+              {weapons.map((weapon, index) => (
+                <WeaponGaugeCard
+                  key={weapon.weapon}
+                  weapon={weapon}
+                  share={totalWeaponKills > 0 ? weapon.kills / totalWeaponKills : 0}
+                  isTop={index === 0}
+                />
+              ))}
+            </Stack>
+          </Box>
         )}
 
         {weapons.length > 0 && shotDistances.length > 0 && <Divider sx={{ my: 1.5 }} />}
 
         {shotDistances.length > 0 && (
           <Box>
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
-              Kills by shot distance
-            </Typography>
+            <SubLabel>By Shot Distance</SubLabel>
             <Stack spacing={1}>
               {shotDistances.map((bucket) => (
                 <Stack key={bucket.label} direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
@@ -128,9 +192,7 @@ function WeaponBreakdown({ playerId, matchId }: WeaponBreakdownProps) {
 
         {bodyPartDamage.length > 0 && (
           <Box>
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
-              Hits by body part
-            </Typography>
+            <SubLabel>By Body Part</SubLabel>
             <BodyPartDiagram parts={bodyPartDamage} />
           </Box>
         )}

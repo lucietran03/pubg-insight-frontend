@@ -68,13 +68,15 @@ function splitEvidence(sentence: string): { title: string; evidence: string | nu
 }
 
 // Recommendations are also single sentences. Some already contain their own rationale
-// clause (e.g. "..., because ..." / "... - your strongest matches..."); when that pattern
-// exists it's split into the action + a WHY line instead of inventing a generic reason for
-// every item.
+// clause (e.g. "..., because ..." / "... - your strongest matches..." / "practice aim to
+// improve headshot rate"); when that pattern exists it's split into the action + a WHY
+// line instead of inventing a generic reason for every item. " to " is checked last (lowest
+// priority) since it's the most common real phrasing (both Gemini and the offline fallback
+// writer produce "<action> to <purpose>" sentences) but the least specific marker.
 function splitRecommendation(sentence: string): { action: string; why: string | null } {
   const trimmed = sentence.trim();
   const lower = trimmed.toLowerCase();
-  const markers = [" because ", " since ", " so that ", " given that ", ": ", " — ", " - "];
+  const markers = [" because ", " since ", " so that ", " given that ", ": ", " — ", " - ", " to "];
   for (const marker of markers) {
     const idx = lower.indexOf(marker);
     if (idx > 8) {

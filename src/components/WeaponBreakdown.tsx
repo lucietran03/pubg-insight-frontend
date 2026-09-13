@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Box, Stack, Typography } from "@mui/material";
+import { Box, Divider, Stack, Typography } from "@mui/material";
 import { getWeaponBreakdown } from "../services/weaponService";
-import type { WeaponKill } from "../types/weaponKill";
+import type { MatchCombatBreakdown } from "../types/weaponKill";
 import SectionTitle from "./SectionTitle";
 
 interface WeaponBreakdownProps {
@@ -10,9 +10,9 @@ interface WeaponBreakdownProps {
 }
 
 // New, telemetry-derived section for the already-existing Selected Match panel
-// (see MatchList.tsx) - a per-weapon kill breakdown that the PUBG summary/season-stats
-// APIs this app otherwise relies on simply cannot produce (they don't expose which weapon
-// got each kill, only kill counts). Backed by a brand new endpoint
+// (see MatchList.tsx) - a per-weapon kill breakdown and a shot-distance histogram, neither
+// of which the PUBG summary/season-stats APIs this app otherwise relies on can produce (they
+// don't expose which weapon got each kill, or at what range). Backed by a brand new endpoint
 // (GET /api/players/{playerId}/matches/{matchId}/weapons) that parses this one match's raw
 // telemetry file server-side.
 //
@@ -22,17 +22,17 @@ interface WeaponBreakdownProps {
 // panel doesn't render, exactly per this feature's isolation requirement. There is no retry
 // button and no error message shown here on purpose.
 function WeaponBreakdown({ playerId, matchId }: WeaponBreakdownProps) {
-  const [weapons, setWeapons] = useState<WeaponKill[] | null>(null);
+  const [breakdown, setBreakdown] = useState<MatchCombatBreakdown | null>(null);
 
   useEffect(() => {
-    // No need to reset `weapons` to null here on matchId change: MatchList.tsx mounts this
+    // No need to reset `breakdown` to null here on matchId change: MatchList.tsx mounts this
     // component with `key={selectedMatchId}`, so a different match is always a fresh mount
     // (fresh `useState(null)`), never a state carryover from the previous match.
     let cancelled = false;
 
     getWeaponBreakdown(playerId, matchId)
       .then((result) => {
-        if (!cancelled) setWeapons(result);
+        if (!cancelled) setBreakdown(result);
       })
       .catch(() => {
         // Silently ignored - see the component-level comment above.
@@ -43,37 +43,79 @@ function WeaponBreakdown({ playerId, matchId }: WeaponBreakdownProps) {
     };
   }, [playerId, matchId]);
 
-  if (!weapons || weapons.length === 0) {
+  const weapons = breakdown?.weapons ?? [];
+  // Only show distance buckets that actually have a kill in them - an empty "120-300m: 0"
+  // row for every match would be noise, not signal.
+  const shotDistances = (breakdown?.shotDistances ?? []).filter((bucket) => bucket.kills > 0);
+
+  if (weapons.length === 0 && shotDistances.length === 0) {
     return null;
   }
 
-  const maxKills = Math.max(...weapons.map((w) => w.kills));
+  const maxWeaponKills = weapons.length > 0 ? Math.max(...weapons.map((w) => w.kills)) : 1;
+  const maxDistanceKills = shotDistances.length > 0 ? Math.max(...shotDistances.map((b) => b.kills)) : 1;
 
   return (
     <Box sx={{ mt: 2 }}>
       <SectionTitle>Weapons Used</SectionTitle>
-      <Stack spacing={1} sx={{ bgcolor: "background.paper", borderRadius: "6px", p: 1.5 }}>
-        {weapons.map((weapon) => (
-          <Stack key={weapon.weapon} direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-            <Typography variant="body2" sx={{ fontWeight: 700, minWidth: 96 }}>
-              {weapon.weapon}
-            </Typography>
-            <Box sx={{ flexGrow: 1, height: 8, borderRadius: 4, bgcolor: "background.default" }}>
-              <Box
-                sx={{
-                  height: "100%",
-                  borderRadius: 4,
-                  bgcolor: "primary.main",
-                  width: `${(weapon.kills / maxKills) * 100}%`,
-                }}
-              />
-            </Box>
-            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 56, textAlign: "right" }}>
-              {weapon.kills} {weapon.kills === 1 ? "kill" : "kills"}
-            </Typography>
+      <Box sx={{ bgcolor: "background.paper", borderRadius: "6px", p: 1.5 }}>
+        {weapons.length > 0 && (
+          <Stack spacing={1}>
+            {weapons.map((weapon) => (
+              <Stack key={weapon.weapon} direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                <Typography variant="body2" sx={{ fontWeight: 700, minWidth: 96 }}>
+                  {weapon.weapon}
+                </Typography>
+                <Box sx={{ flexGrow: 1, height: 8, borderRadius: 4, bgcolor: "background.default" }}>
+                  <Box
+                    sx={{
+                      height: "100%",
+                      borderRadius: 4,
+                      bgcolor: "primary.main",
+                      width: `${(weapon.kills / maxWeaponKills) * 100}%`,
+                    }}
+                  />
+                </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 56, textAlign: "right" }}>
+                  {weapon.kills} {weapon.kills === 1 ? "kill" : "kills"}
+                </Typography>
+              </Stack>
+            ))}
           </Stack>
-        ))}
-      </Stack>
+        )}
+
+        {weapons.length > 0 && shotDistances.length > 0 && <Divider sx={{ my: 1.5 }} />}
+
+        {shotDistances.length > 0 && (
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+              Kills by shot distance
+            </Typography>
+            <Stack spacing={1}>
+              {shotDistances.map((bucket) => (
+                <Stack key={bucket.label} direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700, minWidth: 96 }}>
+                    {bucket.label}
+                  </Typography>
+                  <Box sx={{ flexGrow: 1, height: 8, borderRadius: 4, bgcolor: "background.default" }}>
+                    <Box
+                      sx={{
+                        height: "100%",
+                        borderRadius: 4,
+                        bgcolor: "secondary.main",
+                        width: `${(bucket.kills / maxDistanceKills) * 100}%`,
+                      }}
+                    />
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ minWidth: 56, textAlign: "right" }}>
+                    {bucket.kills} {bucket.kills === 1 ? "kill" : "kills"}
+                  </Typography>
+                </Stack>
+              ))}
+            </Stack>
+          </Box>
+        )}
+      </Box>
     </Box>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Box, Divider, Stack, Typography } from "@mui/material";
 import { getWeaponBreakdown } from "../services/weaponService";
 import type { MatchCombatBreakdown } from "../types/weaponKill";
+import BodyPartDiagram from "./BodyPartDiagram";
 import SectionTitle from "./SectionTitle";
 
 interface WeaponBreakdownProps {
@@ -59,8 +60,6 @@ function WeaponBreakdown({ playerId, matchId }: WeaponBreakdownProps) {
 
   const maxWeaponKills = weapons.length > 0 ? Math.max(...weapons.map((w) => w.kills)) : 1;
   const maxDistanceKills = shotDistances.length > 0 ? Math.max(...shotDistances.map((b) => b.kills)) : 1;
-  const totalBodyPartHits = bodyPartDamage.reduce((sum, part) => sum + part.hits, 0);
-  const maxBodyPartHits = bodyPartDamage.length > 0 ? Math.max(...bodyPartDamage.map((p) => p.hits)) : 1;
 
   return (
     <Box sx={{ mt: 2 }}>
@@ -132,29 +131,7 @@ function WeaponBreakdown({ playerId, matchId }: WeaponBreakdownProps) {
             <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
               Hits by body part
             </Typography>
-            <Stack spacing={1}>
-              {bodyPartDamage.map((part) => (
-                <Stack key={part.label} direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-                  <Typography variant="body2" sx={{ fontWeight: 700, minWidth: 96 }}>
-                    {part.label}
-                  </Typography>
-                  <Box sx={{ flexGrow: 1, height: 8, borderRadius: 4, bgcolor: "background.default" }}>
-                    <Box
-                      sx={{
-                        height: "100%",
-                        borderRadius: 4,
-                        bgcolor: "info.main",
-                        width: `${(part.hits / maxBodyPartHits) * 100}%`,
-                      }}
-                    />
-                  </Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ minWidth: 88, textAlign: "right" }}>
-                    {part.hits} {part.hits === 1 ? "hit" : "hits"}
-                    {totalBodyPartHits > 0 ? ` (${Math.round((part.hits / totalBodyPartHits) * 100)}%)` : ""}
-                  </Typography>
-                </Stack>
-              ))}
-            </Stack>
+            <BodyPartDiagram parts={bodyPartDamage} />
           </Box>
         )}
       </Box>

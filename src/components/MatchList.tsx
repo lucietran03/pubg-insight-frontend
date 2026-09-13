@@ -467,9 +467,11 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
             </Box>
           )}
 
-          {selectedMatchId && <WeaponBreakdown key={selectedMatchId} playerId={playerId} matchId={selectedMatchId} />}
+          {selectedMatchId && (
+            <WeaponBreakdown key={`weapons-${selectedMatchId}`} playerId={playerId} matchId={selectedMatchId} />
+          )}
 
-          {selectedMatchId && <AiInsights key={selectedMatchId} playerId={playerId} matchId={selectedMatchId} />}
+          {selectedMatchId && <AiInsights key={`insights-${selectedMatchId}`} playerId={playerId} matchId={selectedMatchId} />}
         </Box>
       )}
     </Box>

@@ -44,13 +44,20 @@ function BodyPartDiagram({ parts }: BodyPartDiagramProps) {
   const maxHits = Math.max(1, ...parts.map((part) => part.hits));
 
   return (
-    <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ alignItems: "center" }}>
-      <Box sx={{ flexShrink: 0 }}>
-        <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} style={{ width: 120, height: "auto" }} role="img" aria-label="Body-part hit diagram">
+    <Stack direction={{ xs: "column", sm: "row" }} spacing={3} sx={{ alignItems: "center" }}>
+      <Box
+        sx={{
+          flexShrink: 0,
+          borderRadius: "50%",
+          background: (t) => `radial-gradient(circle, ${alpha(t.palette.primary.main, 0.1)} 0%, transparent 70%)`,
+          p: 1,
+        }}
+      >
+        <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} style={{ width: 140, height: "auto" }} role="img" aria-label="Body-part hit diagram">
           {REGIONS.map((region) => {
             const hits = hitsByLabel.get(region.label) ?? 0;
             const intensity = hits / maxHits;
-            const fill = hits > 0 ? alpha(theme.palette.primary.main, 0.2 + 0.7 * intensity) : "none";
+            const fill = hits > 0 ? alpha(theme.palette.primary.main, 0.25 + 0.65 * intensity) : "none";
             const stroke = hits > 0 ? theme.palette.primary.main : theme.palette.divider;
 
             return region.shapes.map((shape, i) =>
@@ -82,32 +89,33 @@ function BodyPartDiagram({ parts }: BodyPartDiagramProps) {
         </svg>
       </Box>
 
-      <Stack spacing={0.75} sx={{ width: "100%" }}>
-        {parts.map((part) => (
-          <Stack key={part.label} direction="row" spacing={1} sx={{ alignItems: "center" }}>
-            <Box
-              sx={{
-                width: 10,
-                height: 10,
-                borderRadius: "2px",
-                flexShrink: 0,
-                bgcolor:
-                  part.hits > 0
-                    ? alpha(theme.palette.primary.main, 0.2 + 0.7 * (part.hits / maxHits))
-                    : "transparent",
-                border: "1px solid",
-                borderColor: part.hits > 0 ? "primary.main" : "divider",
-              }}
-            />
-            <Typography variant="body2" sx={{ fontWeight: 700, minWidth: 56 }}>
-              {part.label}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {part.hits} {part.hits === 1 ? "hit" : "hits"}
-              {totalHits > 0 ? ` · ${Math.round((part.hits / totalHits) * 100)}%` : ""}
-            </Typography>
-          </Stack>
-        ))}
+      <Stack spacing={1.25} sx={{ flexGrow: 1, minWidth: 0, width: "100%" }}>
+        {parts.map((part) => {
+          const share = totalHits > 0 ? part.hits / totalHits : 0;
+          return (
+            <Box key={part.label}>
+              <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "baseline" }}>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                  {part.label}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {part.hits} {part.hits === 1 ? "hit" : "hits"}
+                  {totalHits > 0 ? ` · ${Math.round(share * 100)}%` : ""}
+                </Typography>
+              </Stack>
+              <Box sx={{ mt: 0.5, height: 8, borderRadius: 4, bgcolor: "background.default" }}>
+                <Box
+                  sx={{
+                    height: "100%",
+                    borderRadius: 4,
+                    bgcolor: "primary.main",
+                    width: `${(part.hits / maxHits) * 100}%`,
+                  }}
+                />
+              </Box>
+            </Box>
+          );
+        })}
       </Stack>
     </Stack>
   );

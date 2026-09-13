@@ -7,6 +7,7 @@ import type { SeasonStats } from "../types/seasonStats";
 import { getErrorMessage } from "../utils/errorMessage";
 import AiInsights from "./AiInsights";
 import StatTile from "./StatTile";
+import WeaponBreakdown from "./WeaponBreakdown";
 
 // How long a page's match fetch must be in flight before we tell the user it's the
 // backend's blocking rate limiter (not a stall) - short enough to reassure on a slow
@@ -465,6 +466,8 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
               </Box>
             </Box>
           )}
+
+          {selectedMatchId && <WeaponBreakdown key={selectedMatchId} playerId={playerId} matchId={selectedMatchId} />}
 
           {selectedMatchId && <AiInsights key={selectedMatchId} playerId={playerId} matchId={selectedMatchId} />}
         </Box>

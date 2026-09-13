@@ -9,20 +9,15 @@ import AiInsights from "./AiInsights";
 import StatTile from "./StatTile";
 import WeaponBreakdown from "./WeaponBreakdown";
 
-// How long a page's match fetch must be in flight before we tell the user it's the
-// backend's blocking rate limiter (not a stall) - short enough to reassure on a slow
-// page, long enough not to flash on a normal fast load.
+// Threshold before we attribute a slow page load to the backend's rate limiter rather than
+// a stall.
 const SLOW_LOAD_WARNING_MS = 4000;
 
-// Cap on how many matches this component will ever page through, regardless of how many
-// PUBG actually returns for the player (up to ~14 days' worth, which can be dozens for
-// an active player) - beyond this there's little real value and PUBG's own match history
-// window is already short-lived. matchIds is newest-first, so this keeps the most recent
-// N and drops the rest.
+// Caps how many matches this component pages through; matchIds is newest-first, so this
+// keeps the most recent N.
 const MAX_MATCHES_DISPLAYED = 50;
-// One page = one grid row set on desktop (3 columns) - PUBG has no batch endpoint, so
-// turning a page costs this many API calls. Kept well under the 10 req/min free-tier
-// limit so a single page turn never risks a 429 by itself.
+// One page = one 3-column grid row. Kept well under the free-tier rate limit so a single
+// page turn can't trigger a 429 by itself.
 const PAGE_SIZE = 6;
 
 interface MatchListProps {
@@ -32,9 +27,6 @@ interface MatchListProps {
 
 type MatchState = Match | "loading" | "error";
 
-// Every card in this file rests on a transparent-vs-divider border and only turns
-// primary (gold) when selected - one rule everywhere instead of some cards having no
-// visible resting border and others having a gray one.
 const restingBorderColor = "divider";
 
 function formatMatchDate(createdAt: string, includeTime = false): string {
@@ -104,7 +96,6 @@ function MatchCard({ state, selected, onClick }: MatchCardProps) {
         minHeight: 84,
       }}
     >
-      {/* Top: placement + date on the left, mode badge on the right. */}
       <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start" }}>
         <Stack direction="row" spacing={1} sx={{ alignItems: "baseline" }}>
           <Typography variant="body2" sx={{ fontWeight: 800 }}>
@@ -117,12 +108,10 @@ function MatchCard({ state, selected, onClick }: MatchCardProps) {
         <Chip label={state.gameMode} size="small" />
       </Stack>
 
-      {/* Middle: the map gets its own line and visual room. */}
       <Typography variant="body2" sx={{ fontWeight: 600 }}>
         {state.mapName}
       </Typography>
 
-      {/* Bottom: kills left, damage right, so matches can be scanned at a glance. */}
       <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-end", mt: "auto" }}>
         <Box>
           <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1 }}>
@@ -151,9 +140,7 @@ interface DeltaMetric {
   seasonAvg: number;
 }
 
-// Renders one compact tile per metric, comparing this match's value against the player's
-// season average. Metrics with a zero season average are skipped entirely (division by
-// zero would produce a meaningless/Infinity percentage).
+// Skips metrics with a zero season average to avoid a division-by-zero/Infinity percentage.
 function buildDeltaTiles(metrics: DeltaMetric[]) {
   return metrics
     .filter((metric) => metric.seasonAvg !== 0)
@@ -171,18 +158,15 @@ function buildDeltaTiles(metrics: DeltaMetric[]) {
             textAlign: "center",
           }}
         >
-          {/* Largest: the percentage is the key insight, so it dominates visually. */}
           <Typography
             variant="h5"
             sx={{ fontWeight: 800, lineHeight: 1, color: isBetter ? "success.main" : "error.main" }}
           >
             {isBetter ? "▲" : "▼"} {Math.abs(pct).toFixed(0)}%
           </Typography>
-          {/* Secondary: which metric this is. */}
           <Typography variant="body2" sx={{ fontWeight: 700, mt: 0.5 }}>
             {metric.label}
           </Typography>
-          {/* Caption: the comparison basis, smallest. */}
           <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
             vs season average
           </Typography>
@@ -219,23 +203,21 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
   const [page, setPage] = useState(0);
   const pageIds = displayedIds.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  // Holds fetched state for every match visited so far across all pages, so paging back
-  // to a page already seen never re-fetches it.
+  // Caches every match fetched so far, so paging back to a page already seen never
+  // re-fetches it.
   const [matchCache, setMatchCache] = useState<Record<string, MatchState>>({});
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [selectedError, setSelectedError] = useState<string | null>(null);
 
-  // Season stats are only needed once a match is selected (for the delta chips below), so
-  // we deliberately skip fetching them on initial page load to stay within the shared
-  // rate-limit budget. Fetched once per player search and cached in state - re-selecting
-  // a different match never re-fetches it.
+  // Fetched only once a match is selected (to save rate-limit budget) and cached for the
+  // whole player search.
   const [seasonStats, setSeasonStats] = useState<SeasonStats | null>(null);
   const seasonStatsFetchedRef = useRef(false);
 
   const [showSlowLoadNotice, setShowSlowLoadNotice] = useState(false);
 
-  // Lets the page-fetch effect below read the latest cache without needing matchCache
-  // itself as a dependency (which would re-run the fetch on every single result).
+  // Lets the fetch effect below read the latest cache without depending on matchCache
+  // itself (which would re-run the fetch on every result).
   const matchCacheRef = useRef(matchCache);
   useEffect(() => {
     matchCacheRef.current = matchCache;
@@ -260,10 +242,8 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
     return state === undefined || state === "loading";
   });
 
-  // Starts a timer as soon as the page's fetches go in flight; if they're still not done
-  // after SLOW_LOAD_WARNING_MS, the backend's blocking rate limiter is almost certainly
-  // queuing this page's requests, so we surface a more specific message. Cleared as soon
-  // as loading finishes (isPageLoading flips false) or the page changes.
+  // Surfaces the rate-limit notice if the page's fetches are still pending after
+  // SLOW_LOAD_WARNING_MS.
   useEffect(() => {
     if (!isPageLoading) return;
     const timer = setTimeout(() => setShowSlowLoadNotice(true), SLOW_LOAD_WARNING_MS);
@@ -273,9 +253,8 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
     };
   }, [isPageLoading, page]);
 
-  // Also doubles as the retry action: clicking an already-failed card re-runs this, and
-  // since its cache entry is "error" (not a loaded Match), the guard below falls through
-  // to a fresh fetch instead of returning early.
+  // Also doubles as the retry action: an errored cache entry falls through to a fresh
+  // fetch instead of returning early.
   const handleSelect = async (matchId: string) => {
     setSelectedMatchId(matchId);
     setSelectedError(null);
@@ -295,9 +274,8 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
     }
   };
 
-  // Fires once, the first time a match is selected - not on initial page load. This is a
-  // deliberate one-time extra PUBG call per player search (acceptable against the shared
-  // rate-limit budget) so the delta chips below have something to compare against.
+  // Fires once, the first time a match is selected, so the delta chips below have
+  // something to compare against.
   useEffect(() => {
     if (selectedMatchId === null || seasonStatsFetchedRef.current) return;
     seasonStatsFetchedRef.current = true;
@@ -391,7 +369,6 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
             spacing={{ xs: 1.5, sm: 3 }}
             sx={{ alignItems: { xs: "center", sm: "center" }, textAlign: { xs: "center", sm: "left" } }}
           >
-            {/* LEFT: placement is the unambiguous visual anchor. */}
             <Box sx={{ minWidth: { sm: 90 } }}>
               <Typography variant="overline" color="text.secondary">
                 Placement
@@ -408,7 +385,6 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
               </Typography>
             </Box>
 
-            {/* CENTER: the map. */}
             <Box sx={{ flexGrow: 1, textAlign: "center" }}>
               <Typography variant="overline" color="text.secondary">
                 Map
@@ -418,7 +394,6 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
               </Typography>
             </Box>
 
-            {/* RIGHT: mode badge + date. */}
             <Stack
               spacing={0.5}
               sx={{ alignItems: { xs: "center", sm: "flex-end" }, minWidth: { sm: 140 } }}

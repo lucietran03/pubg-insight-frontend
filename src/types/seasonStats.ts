@@ -7,10 +7,7 @@ export interface RadarScores {
   consistency: number;
 }
 
-// Percentage differences between the current season and the immediately preceding one,
-// for the same metrics tracked on SeasonStats. Positive means the current season is
-// higher than the previous one. Null on SeasonStats when there is no previous season to
-// compare against (e.g. a brand-new account with no season history yet).
+// Positive means the current season is higher than the previous one.
 export interface SeasonComparison {
   winRateDeltaPct: number;
   avgDamageDeltaPct: number;
@@ -31,5 +28,6 @@ export interface SeasonStats {
   longestKillMeters: number;
   radar: RadarScores;
   archetype: string;
+  // Null when there is no previous season to compare against.
   previousSeasonComparison: SeasonComparison | null;
 }

@@ -9,9 +9,8 @@ interface BodyPartDiagramProps {
 const WIDTH = 200;
 const HEIGHT = 340;
 
-// A simplified humanoid silhouette (not anatomically precise - this is a data visualization,
-// not a game-accurate hitbox overlay). "Arms" and "Legs" are each a single data category
-// covering both left+right telemetry hits, so both shapes for a side pair share one color.
+// Simplified silhouette, not anatomically precise. "Arms" and "Legs" are each a single
+// category covering both left+right hits, so both shapes in a pair share one color.
 const REGIONS: { label: string; shapes: { kind: "circle" | "rect"; props: Record<string, number> }[] }[] = [
   { label: "Head", shapes: [{ kind: "circle", props: { cx: 100, cy: 36, r: 24 } }] },
   { label: "Torso", shapes: [{ kind: "rect", props: { x: 66, y: 64, width: 68, height: 100, rx: 16 } }] },
@@ -32,10 +31,8 @@ const REGIONS: { label: string; shapes: { kind: "circle" | "rect"; props: Record
   },
 ];
 
-// Hand-rolled SVG, no charting/body-tracking library - same "simple shapes over a library"
-// convention as PerformanceRadar.tsx. Fill intensity (a single hue, light-to-dark) encodes
-// hit share, per this app's established sequential-magnitude color rule; a region with zero
-// hits stays a flat, recessive outline instead of a colored fill.
+// Hand-rolled SVG, same convention as PerformanceRadar.tsx. Fill intensity encodes hit
+// share; a region with zero hits stays an outline instead of a colored fill.
 function BodyPartDiagram({ parts }: BodyPartDiagramProps) {
   const theme = useTheme();
 

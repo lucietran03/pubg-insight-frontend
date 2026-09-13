@@ -3,8 +3,7 @@ export interface Insight {
   strengths: string[];
   weaknesses: string[];
   recommendations: string[];
-  // V2 "AI coach" sections - each is empty ("" / []) rather than fabricated when Gemini's
-  // response didn't include that section (see backend InsightService.parseInsight).
+  // Empty ("" / []) rather than fabricated when Gemini's response omits the section.
   playstyle: string;
   seasonProgress: string;
   riskFactors: string[];

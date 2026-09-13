@@ -40,10 +40,7 @@ function ringPoints(radius: number) {
 }
 
 // Hand-rolled SVG hexagon radar - 6 fixed axes, no charting library needed for one chart.
-// Single series: recessive gridlines, one primary-color fill, direct axis labels (no
-// legend needed - the chart title already names the series). Scales to its container
-// (viewBox + max-width) so it can act as a real centerpiece next to the stat grid instead
-// of a small fixed-size chart.
+// Scales via viewBox so it can act as a real centerpiece instead of a small fixed-size chart.
 function PerformanceRadar({ scores }: PerformanceRadarProps) {
   const theme = useTheme();
   const gradientId = useId();

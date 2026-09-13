@@ -8,8 +8,6 @@ interface PerformanceBreakdownProps {
   stats: SeasonStats;
 }
 
-// LEFT (~45%): the 6 stat tiles, 2 columns x 3 rows. RIGHT (~55%): the radar, the visual
-// centerpiece of this card. Stacks to a single column on mobile, radar below the stats.
 function PerformanceBreakdown({ stats }: PerformanceBreakdownProps) {
   const comparison = stats.previousSeasonComparison;
 

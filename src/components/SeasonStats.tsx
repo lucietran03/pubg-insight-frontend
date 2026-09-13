@@ -10,9 +10,8 @@ interface SeasonStatsProps {
   onRetry: () => void;
 }
 
-// Compact card content: identity + headline win rate only. The full stat grid and
-// performance radar live in the separate, full-width PerformanceBreakdown card so this
-// one stays roughly the same height as its sibling "Player Overview" card.
+// Compact card: identity + headline win rate only. Full stat grid and radar live in
+// PerformanceBreakdown so this card matches its sibling's height.
 function SeasonStats({ stats, loading, error, onRetry }: SeasonStatsProps) {
   if (loading) {
     return (

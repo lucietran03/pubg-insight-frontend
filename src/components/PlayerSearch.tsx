@@ -27,17 +27,15 @@ function PlayerSearch() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetched once here (not inside SeasonStats) so both the compact "Season Performance"
-  // card and the full-width "Performance Breakdown" card below it can share the same
-  // data without a duplicate PUBG-backed call.
+  // Fetched here (not inside SeasonStats) so both the compact and full-width cards below
+  // can share it without a duplicate call.
   const [seasonStats, setSeasonStats] = useState<SeasonStatsData | null>(null);
   const [seasonStatsLoading, setSeasonStatsLoading] = useState(false);
   const [seasonStatsError, setSeasonStatsError] = useState<string | null>(null);
   const [seasonStatsRetryToken, setSeasonStatsRetryToken] = useState(0);
 
-  // The synchronous "start loading" resets happen in the two event handlers below (search,
-  // retry), not here - a `set-state-in-effect` lint rule forbids calling setState directly
-  // in an effect body; only the async .then/.catch/.finally callbacks are allowed to.
+  // Synchronous resets happen in the event handlers below, not here -
+  // react-hooks/set-state-in-effect forbids calling setState directly in an effect body.
   useEffect(() => {
     if (!player) return;
 
@@ -117,9 +115,8 @@ function PlayerSearch() {
         </Alert>
       )}
 
-      {/* Single key on this wrapper (not on SeasonStats/MatchList individually) so the
-          whole section remounts cleanly per player - two sibling elements with the same
-          key value would otherwise trigger a real React "duplicate key" warning. */}
+      {/* Single key here (not on children) avoids two siblings sharing a key and
+          triggering React's duplicate-key warning. */}
       {player && (
         <Box key={player.id} sx={{ mt: 3 }}>
           <RevealOnMount delayMs={0}>

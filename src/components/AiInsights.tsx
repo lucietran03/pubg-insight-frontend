@@ -11,10 +11,8 @@ interface AiInsightsProps {
   matchId: string;
 }
 
-// Sequential messages shown while the real `getInsights` request is in flight. These are
-// purely narrative - the backend does one call, not seven - but staging the wait like this
-// (see handleGenerate below) reads as "an analysis pipeline is running" instead of "a
-// spinner is frozen", which is the whole point of this loading experience.
+// Purely narrative - the backend makes one call, not seven - staged to read as a pipeline
+// running instead of a frozen spinner.
 const LOADING_STAGES = [
   "Connecting to performance data...",
   "Fetching recent match history...",
@@ -25,16 +23,13 @@ const LOADING_STAGES = [
   "Finalizing AI report...",
 ];
 
-// Minimum wall-clock time the staged sequence plays for, regardless of how fast the real
-// API responds - long enough to read a couple of stages, short enough not to feel slow.
-// The real request runs in parallel with this (see handleGenerate), never after it.
+// Minimum time the staged sequence plays regardless of API speed; runs in parallel with
+// the real request (see handleGenerate), never after it.
 const MIN_SEQUENCE_MS = 2800;
 const STAGE_MS = MIN_SEQUENCE_MS / LOADING_STAGES.length;
 
-// Content density caps - the brief asks for a short, punchy report rather than a wall of
-// text, even when the backend/Gemini produced a longer list. Arrays are already returned
-// in the backend's own priority order, so keeping the first N keeps the most important
-// items.
+// Arrays arrive in the backend's priority order, so keeping the first N keeps the most
+// important items.
 const MAX_STRENGTHS = 4;
 const MAX_HURT_ITEMS = 3;
 const MAX_RECOMMENDATIONS = 3;
@@ -45,12 +40,9 @@ function capitalizeFragment(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-// Strengths/weaknesses/risk factors each arrive as a single already-written sentence
-// (Gemini's prompt asks it to reference real match/season numbers inline) rather than a
-// structured {title, evidence} shape. This splits a sentence at its first clause boundary
-// whose trailing half contains a digit - a decent signal that half is the numeric
-// "evidence" rather than just a second descriptive clause. When no such boundary exists,
-// the whole sentence is kept as the title with no evidence line, instead of forcing a split.
+// Strengths/weaknesses/risk factors arrive as a single sentence, not a {title, evidence}
+// shape. Splits at the first delimiter whose trailing half contains a digit, treating that
+// half as the numeric evidence; falls back to the whole sentence as the title.
 function splitEvidence(sentence: string): { title: string; evidence: string | null } {
   const trimmed = sentence.trim();
   const delimiters = [";", " — ", " - ", ": ", ", "];
@@ -67,12 +59,9 @@ function splitEvidence(sentence: string): { title: string; evidence: string | nu
   return { title: trimmed, evidence: null };
 }
 
-// Recommendations are also single sentences. Some already contain their own rationale
-// clause (e.g. "..., because ..." / "... - your strongest matches..." / "practice aim to
-// improve headshot rate"); when that pattern exists it's split into the action + a WHY
-// line instead of inventing a generic reason for every item. " to " is checked last (lowest
-// priority) since it's the most common real phrasing (both Gemini and the offline fallback
-// writer produce "<action> to <purpose>" sentences) but the least specific marker.
+// Splits a recommendation sentence into action + WHY at the first rationale marker present,
+// instead of inventing a generic reason. " to " is checked last since it's the most common
+// phrasing but the least specific marker.
 function splitRecommendation(sentence: string): { action: string; why: string | null } {
   const trimmed = sentence.trim();
   const lower = trimmed.toLowerCase();
@@ -90,8 +79,7 @@ function splitRecommendation(sentence: string): { action: string; why: string | 
   return { action: trimmed, why: null };
 }
 
-// FOCUS is a short tag inferred from keywords actually present in the recommendation's own
-// text (not a separate field) - an honest derivation from the string, not a fabricated one.
+// Inferred from keywords in the recommendation's own text, not a separate backend field.
 const FOCUS_TAG_RULES: Array<[RegExp, string]> = [
   [/posit/i, "Positioning"],
   [/(aim|accuracy|headshot|precision)/i, "Precision"],
@@ -118,12 +106,9 @@ function SectionLabel({ text, color }: { text: string; color: string }) {
   );
 }
 
-// Pattern A - NARRATIVE CARD. Shared by Overall Verdict, Playstyle Diagnosis and
-// Long-term Development so all three read as the same kind of block (border + tinted
-// background + label + prose) instead of each inventing its own look (bare headline vs
-// italic blockquote vs paragraph+bullets, as before). `rankedLines` lets
-// Long-term Development fold its trainingPriorities array in as short ranked lines under
-// the paragraph rather than breaking into a different structural pattern.
+// Shared card style for Overall Verdict, Playstyle Diagnosis, and Long-term Development.
+// `rankedLines` lets Long-term Development show trainingPriorities as ranked lines under
+// the paragraph.
 function NarrativeCard({
   label,
   paragraph,
@@ -172,9 +157,8 @@ function NarrativeCard({
   );
 }
 
-// Pattern B - EVIDENCE LIST. Shared by "What You Did Well" (strengths) and "What Hurt
-// Your Performance" (weaknesses + riskFactors). Each item renders as a title line plus an
-// optional evidence line underneath (see splitEvidence), so both columns read the same way.
+// Shared list style for "What You Did Well" and "What Hurt Your Performance". Each item
+// renders as a title line plus an optional evidence line (see splitEvidence).
 function EvidenceList({
   label,
   items,
@@ -226,11 +210,8 @@ function EvidenceList({
   );
 }
 
-// Pattern C - ACTION PLAN. Used only for Key Coaching Advice (recommendations). Each
-// ranked step shows the action, and - only where the sentence itself supports it - a WHY
-// line (the recommendation's own rationale clause) and a FOCUS tag (inferred from keywords
-// in that same sentence). Items that don't cleanly split just render the numbered action
-// alone rather than a fabricated generic WHY/FOCUS.
+// Used for Key Coaching Advice. Each step shows the action plus, only where the sentence
+// supports it, a WHY line and an inferred FOCUS tag - otherwise just the numbered action.
 function ActionPlan({ items }: { items: string[] }) {
   return (
     <Box sx={{ mt: 2.5 }}>
@@ -287,9 +268,8 @@ function ActionPlan({ items }: { items: string[] }) {
   );
 }
 
-// Small decorative hexagon/radar-outline sketch for the loading state - a simplified nod
-// to the app's 6-axis PerformanceRadar (not the real component), pulsing subtly via CSS
-// opacity only. Only ever mounted when reduced motion is not requested (see render below).
+// Decorative nod to the app's 6-axis PerformanceRadar; only mounted when reduced motion
+// isn't requested.
 function HexagonSketch() {
   return (
     <Box
@@ -315,9 +295,7 @@ function HexagonSketch() {
   );
 }
 
-// Staged, "tactical" loading panel: hexagon sketch + current stage message + a determinate
-// progress bar. `progress` is pre-clamped by the caller (never shown at a stalled
-// mid-value forever, never loops back to 0 - see handleGenerate/elapsedMs below).
+// `progress` is pre-clamped by the caller, so it never stalls mid-value or loops back to 0.
 function AnalysisProgress({ stageIndex, progress }: { stageIndex: number; progress: number }) {
   return (
     <Box sx={{ mt: 1, bgcolor: "background.paper", borderRadius: "6px", p: 2.5 }}>
@@ -356,8 +334,8 @@ function AiInsights({ playerId, matchId }: AiInsightsProps) {
   const [revealed, setRevealed] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
 
-  // Computed once via a lazy initializer - the staged animation is purely cosmetic, so
-  // there's no need to react to the media query changing mid-session.
+  // Computed once - the staged animation is purely cosmetic, no need to react to the media
+  // query changing mid-session.
   const [reducedMotion] = useState(
     () =>
       typeof window !== "undefined" && typeof window.matchMedia === "function" &&
@@ -385,9 +363,8 @@ function AiInsights({ playerId, matchId }: AiInsightsProps) {
     setRevealed(false);
     setElapsedMs(0);
 
-    // The staged visual sequence and the real request run in parallel, not sequentially -
-    // this promise is only ever used to make sure the visuals don't finish *before* the
-    // minimum duration, never to delay the actual network call.
+    // Runs in parallel with the real request; only prevents the visuals from finishing
+    // before the minimum duration, never delays the network call.
     const minDurationPromise = reducedMotion
       ? Promise.resolve()
       : new Promise<void>((resolve) => setTimeout(resolve, MIN_SEQUENCE_MS));
@@ -397,8 +374,8 @@ function AiInsights({ playerId, matchId }: AiInsightsProps) {
       if (generationRef.current !== myGeneration) return;
       setInsight(result);
     } catch (err) {
-      // Still honor the minimum visual duration on failure - otherwise a fast error would
-      // cancel the staged sequence mid-stage instead of finishing it.
+      // Honor the minimum duration on failure too, so a fast error doesn't cut the staged
+      // sequence off mid-stage.
       await minDurationPromise;
       if (generationRef.current !== myGeneration) return;
       setError(getErrorMessage(err, "Could not generate insights for this match."));
@@ -414,17 +391,13 @@ function AiInsights({ playerId, matchId }: AiInsightsProps) {
     }
   };
 
-  // If the real API resolves before MIN_SEQUENCE_MS, elapsedMs keeps advancing (the
-  // interval only stops when `loading` flips false) so the stage/progress still read
-  // naturally up to ~100%. If the API takes longer than MIN_SEQUENCE_MS, both clamp to
-  // the last stage / 99% - held there (not looping, not stuck mid-bar) until the response
-  // lands and `loading` flips false.
+  // If the API resolves before MIN_SEQUENCE_MS, elapsedMs keeps advancing (the interval only
+  // stops when `loading` flips false). If it takes longer, both clamp at the last stage / 99%
+  // until the response lands.
   const stageIndex = Math.min(Math.floor(elapsedMs / STAGE_MS), LOADING_STAGES.length - 1);
   const progress = Math.min(99, (elapsedMs / MIN_SEQUENCE_MS) * 100);
 
-  // "Hurt" side of the review pairing folds risk factors in after weaknesses - both are
-  // negative signals, weaknesses first since they're the direct, already-prioritized read
-  // on the match, risk factors appended as broader concerns. Capped per MAX_HURT_ITEMS.
+  // Risk factors are appended after weaknesses - both are negative signals - then capped.
   const strengthItems = insight ? insight.strengths.slice(0, MAX_STRENGTHS) : [];
   const hurtItems = insight ? [...insight.weaknesses, ...insight.riskFactors].slice(0, MAX_HURT_ITEMS) : [];
   const hasStrengths = strengthItems.length > 0;
@@ -485,11 +458,8 @@ function AiInsights({ playerId, matchId }: AiInsightsProps) {
             </Typography>
           )}
 
-          {/* Overall Verdict - Pattern A (Narrative Card). */}
           {insight.summary.length > 0 && <NarrativeCard label="OVERALL VERDICT" paragraph={insight.summary} />}
 
-          {/* What You Did Well / What Hurt Your Performance - Pattern B (Evidence List),
-              paired side-by-side on wider screens with a clear green-vs-red visual language. */}
           {(hasStrengths || hasHurt) && (
             <Box
               sx={{
@@ -508,15 +478,10 @@ function AiInsights({ playerId, matchId }: AiInsightsProps) {
             </Box>
           )}
 
-          {/* Key Coaching Advice - Pattern C (Action Plan). */}
           {topRecommendations.length > 0 && <ActionPlan items={topRecommendations} />}
 
-          {/* Playstyle Diagnosis - Pattern A (Narrative Card). */}
           {insight.playstyle.length > 0 && <NarrativeCard label="PLAYSTYLE DIAGNOSIS" paragraph={insight.playstyle} />}
 
-          {/* Long-term Development - Pattern A (Narrative Card), with trainingPriorities
-              folded in as ranked lines under the season-progress paragraph rather than a
-              separate structural pattern. */}
           {hasDevelopment && (
             <NarrativeCard
               label="LONG-TERM DEVELOPMENT"

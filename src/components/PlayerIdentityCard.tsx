@@ -6,9 +6,8 @@ interface PlayerIdentityCardProps {
   radar: RadarScores;
 }
 
-// Deterministic, per-archetype blurb - not Gemini-generated (that's a later phase: Gemini
-// should only ever explain *why* a deterministic label was assigned, never invent the
-// label itself). Placeholder wording until the AI Report phase adds a real per-player "why".
+// Deterministic per-archetype text, not Gemini-generated - Gemini only ever explains why a
+// label was assigned, never invents it.
 const ARCHETYPE_BLURBS: Record<string, string> = {
   "Frontline Eliminator": "Leads engagements and racks up kills at a high rate.",
   "Survival Specialist": "Prioritizes staying alive over early fights.",
@@ -19,10 +18,8 @@ const ARCHETYPE_BLURBS: Record<string, string> = {
   "Balanced Operator": "No single standout trait — performs evenly across combat, survival, and support.",
 };
 
-// The archetype is deterministically assigned backend-side as the single highest-scoring
-// radar axis (or "Balanced Operator" when the spread across axes is small). This maps each
-// archetype back to the axis that drove it, so we can surface the actual score as a
-// classification alongside the label rather than showing it as a floating, unexplained badge.
+// Archetype is assigned backend-side as the single highest-scoring radar axis (or "Balanced
+// Operator" when the spread is small); this maps it back to that axis for display.
 const ARCHETYPE_AXIS: Record<string, keyof RadarScores | undefined> = {
   "Frontline Eliminator": "combat",
   "Survival Specialist": "survival",
@@ -41,8 +38,8 @@ const AXIS_LABELS: Record<keyof RadarScores, string> = {
   consistency: "Consistency",
 };
 
-// Qualitative read on how much the driving axis stands out from the rest of the radar -
-// a rough "confidence" of the classification, not a separate backend value.
+// Rough qualitative confidence label based on how far the driving axis leads the rest of
+// the radar, not a separate backend value.
 function classificationLabel(axisScore: number, otherScores: number[]): string {
   const avgOthers = otherScores.reduce((sum, value) => sum + value, 0) / otherScores.length;
   const margin = axisScore - avgOthers;
@@ -51,10 +48,8 @@ function classificationLabel(axisScore: number, otherScores: number[]): string {
   return "Emerging trait";
 }
 
-// Hierarchy, top to bottom: archetype title alone (the hero of this block) -> supporting
-// classification metadata, demoted to small/secondary so it never competes with the title
-// on the same line -> short description. The win-rate hero metric and its supporting
-// stats live below this component, in SeasonStats.tsx.
+// Archetype title is the hero here; the win-rate hero metric lives separately in
+// SeasonStats.tsx.
 function PlayerIdentityCard({ archetype, radar }: PlayerIdentityCardProps) {
   const axis = ARCHETYPE_AXIS[archetype];
   const allScores = Object.values(radar);

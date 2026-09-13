@@ -10,10 +10,8 @@ function prefersReducedMotion(): boolean {
   return typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
 }
 
-// Subtle fade+slide-up used to stagger each major dashboard section into view (Player
-// Overview -> Season Performance -> Performance Breakdown -> Recent Matches), one section
-// at a time instead of the whole page popping in at once. Skips the animation entirely
-// under prefers-reduced-motion (renders visible immediately, no timers).
+// Staggers each dashboard section into view one at a time; skips the animation entirely
+// under prefers-reduced-motion.
 function RevealOnMount({ delayMs = 0, children }: RevealOnMountProps) {
   const [visible, setVisible] = useState(() => prefersReducedMotion());
 

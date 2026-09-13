@@ -3,14 +3,11 @@ import type { SeasonStats } from "../types/seasonStats";
 import type { Match } from "../types/match";
 import type { Insight } from "../types/insight";
 
-// Lets the whole app be exercised with a fully populated UI (many matches, season
-// stats, AI insights) without needing the real backend or PUBG at all - see
-// src/services/*.ts, each checks this before making a real API call. Enable with
-// VITE_USE_MOCK_DATA=true in a local .env file, then `npm run dev`.
+// Exercises the app without a real backend. Enable with VITE_USE_MOCK_DATA=true.
 export const MOCK_MODE_ENABLED = import.meta.env.VITE_USE_MOCK_DATA === "true";
 
 const MOCK_PLAYER_ID = "mock-account-1";
-const MOCK_MATCH_COUNT = 23; // more than one page (PAGE_SIZE=6 in MatchList.tsx), so pagination is actually exercised
+const MOCK_MATCH_COUNT = 23; // more than one page (PAGE_SIZE=6 in MatchList.tsx) so pagination is exercised
 const MAPS = ["Erangel", "Miramar", "Sanhok", "Vikendi", "Taego", "Deston", "Paramo"];
 const MODES = ["Squad", "Squad FPP", "Duo", "Duo FPP", "Solo", "Solo FPP"];
 
@@ -88,8 +85,7 @@ export function getMockMatch(matchId: string): Match | undefined {
   return mockMatchesById[matchId];
 }
 
-// Small artificial delay so loading/skeleton states are actually visible while testing
-// with mock data, instead of resolving instantly.
+// Artificial delay so loading/skeleton states are visible in mock mode.
 export function delay<T>(value: T, ms = 500): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms));
 }

@@ -11,9 +11,6 @@ interface WeaponBreakdownProps {
   matchId: string;
 }
 
-// Small "premium micro-header" used for each sub-section inside this panel (By Weapon / By
-// Shot Distance / By Body Part) - a colored dot + bold uppercase caption, consistent across
-// all three instead of each using a plain muted caption.
 function SubLabel({ children }: { children: string }) {
   return (
     <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 1 }}>
@@ -32,10 +29,8 @@ const RING_SIZE = 76;
 const RING_RADIUS = 40;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
-// One weapon as a radial "kill share" gauge card - a small ring chart (SVG stroke-dasharray
-// trick, no charting library, same "hand-rolled over a library" convention as
-// PerformanceRadar.tsx) instead of another horizontal bar row. The top weapon gets a gold
-// card border so the eye lands there first, like a small leaderboard.
+// Ring gauge via SVG stroke-dasharray, same hand-rolled convention as PerformanceRadar.
+// Top weapon gets a gold border so the eye lands there first.
 function WeaponGaugeCard({ weapon, share, isTop }: { weapon: WeaponKill; share: number; isTop: boolean }) {
   const theme = useTheme();
   const arcLength = share * RING_CIRCUMFERENCE;
@@ -85,26 +80,15 @@ function WeaponGaugeCard({ weapon, share, isTop }: { weapon: WeaponKill; share: 
   );
 }
 
-// New, telemetry-derived section for the already-existing Selected Match panel
-// (see MatchList.tsx) - a per-weapon kill breakdown, a shot-distance histogram, and a
-// hits-by-body-part breakdown, none of which the PUBG summary/season-stats APIs this app
-// otherwise relies on can produce (they don't expose which weapon got each kill, at what
-// range, or where each hit landed). Backed by a brand new endpoint
-// (GET /api/players/{playerId}/matches/{matchId}/weapons) that parses this one match's raw
-// telemetry file server-side.
-//
-// Deliberately fails silently: this endpoint can legitimately return nothing (a match whose
-// telemetry has expired on PUBG's side, a 0-kill match, a transient fetch/parse failure on a
-// large file) and none of those are "the match page is broken" - they just mean this optional
-// panel doesn't render, exactly per this feature's isolation requirement. There is no retry
-// button and no error message shown here on purpose.
+// Fails silently by design: a missing breakdown (expired telemetry, a 0-kill match, a
+// transient fetch failure) just means this optional panel doesn't render - no error UI,
+// no retry button.
 function WeaponBreakdown({ playerId, matchId }: WeaponBreakdownProps) {
   const [breakdown, setBreakdown] = useState<MatchCombatBreakdown | null>(null);
 
   useEffect(() => {
-    // No need to reset `breakdown` to null here on matchId change: MatchList.tsx mounts this
-    // component with `key={selectedMatchId}`, so a different match is always a fresh mount
-    // (fresh `useState(null)`), never a state carryover from the previous match.
+    // No need to reset `breakdown` on matchId change: MatchList mounts this with
+    // key={selectedMatchId}, so a new match is always a fresh mount.
     let cancelled = false;
 
     getWeaponBreakdown(playerId, matchId)
@@ -121,12 +105,10 @@ function WeaponBreakdown({ playerId, matchId }: WeaponBreakdownProps) {
   }, [playerId, matchId]);
 
   const weapons = breakdown?.weapons ?? [];
-  // Only show distance buckets that actually have a kill in them - an empty "120-300m: 0"
-  // row for every match would be noise, not signal.
+  // Only show buckets with at least one kill; an all-zero row would be noise.
   const shotDistances = (breakdown?.shotDistances ?? []).filter((bucket) => bucket.kills > 0);
-  // Same convention: only show body parts that were actually hit at least once. The backend
-  // always returns all five labels (even at 0) so it can add new ones later without a
-  // frontend change; filtering zero rows here is purely a display choice.
+  // Backend always returns all five body-part labels (even at 0); filtering zero rows here
+  // is just a display choice.
   const bodyPartDamage = (breakdown?.bodyPartDamage ?? []).filter((part) => part.hits > 0);
 
   if (weapons.length === 0 && shotDistances.length === 0 && bodyPartDamage.length === 0) {

@@ -1,10 +1,6 @@
 import axios from "axios";
 
-// The backend already returns a distinct, human-readable "error" message per failure
-// type (PUBG failure, Gemini failure, rate limit, etc. - see GlobalExceptionHandler).
-// Surface that message directly instead of guessing a generic one from the status code
-// alone - a hardcoded per-status string here previously showed "PUBG service
-// unavailable" for a Gemini failure, since both happened to return the same HTTP status.
+// Surface the backend's own error message instead of deriving one from the HTTP status code.
 export function getErrorMessage(error: unknown, notFoundMessage: string): string {
   if (axios.isAxiosError(error)) {
     if (error.response?.status === 404) {

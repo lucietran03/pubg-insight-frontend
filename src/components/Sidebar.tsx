@@ -13,7 +13,6 @@ interface SidebarProps {
   backendOnline: boolean | null;
   historyRefreshToken: number;
   playersSearchedCount: number;
-  insightsGeneratedCount: number;
 }
 
 const MAX_HISTORY_ITEMS = 5;
@@ -144,7 +143,6 @@ function Sidebar({
   backendOnline,
   historyRefreshToken,
   playersSearchedCount,
-  insightsGeneratedCount,
 }: SidebarProps) {
   const statusColor =
     backendOnline === null ? "text.disabled" : backendOnline ? "success.main" : "error.main";
@@ -202,7 +200,6 @@ function Sidebar({
         }}
       >
         <StatBlock value={playersSearchedCount} label="Players searched" />
-        <StatBlock value={insightsGeneratedCount} label="Insights generated" />
       </Stack>
 
       {player && <RecentlyAnalyzed player={player} historyRefreshToken={historyRefreshToken} />}

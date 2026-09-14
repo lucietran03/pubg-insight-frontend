@@ -15,9 +15,8 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   // Bumped after a new analysis is recorded so the sidebar's history list re-fetches.
   const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
-  // Real counts for this browser session (not fabricated global totals) - shown in the sidebar.
+  // Real count for this browser session (not a fabricated global total) - shown in the sidebar.
   const [playersSearchedCount, setPlayersSearchedCount] = useState(0);
-  const [insightsGeneratedCount, setInsightsGeneratedCount] = useState(0);
 
   useEffect(() => {
     api
@@ -56,7 +55,6 @@ function App() {
         backendOnline={backendOnline}
         historyRefreshToken={historyRefreshToken}
         playersSearchedCount={playersSearchedCount}
-        insightsGeneratedCount={insightsGeneratedCount}
       />
 
       <Box sx={{ flexGrow: 1, minWidth: 0 }}>
@@ -85,10 +83,7 @@ function App() {
             <PlayerDashboard
               key={player.id}
               player={player}
-              onAnalysisRecorded={() => {
-                setHistoryRefreshToken((token) => token + 1);
-                setInsightsGeneratedCount((count) => count + 1);
-              }}
+              onAnalysisRecorded={() => setHistoryRefreshToken((token) => token + 1)}
             />
           )}
         </Box>

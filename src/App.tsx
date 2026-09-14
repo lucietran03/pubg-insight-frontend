@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Alert, Box, CircularProgress, Typography } from "@mui/material";
 import api from "./api/axios";
-import { searchPlayer } from "./services/playerService";
+import { getPlayerById, searchPlayer } from "./services/playerService";
 import type { Player } from "./types/player";
 import { getErrorMessage } from "./utils/errorMessage";
 import PlayerDashboard from "./components/PlayerDashboard";
@@ -11,8 +11,13 @@ function App() {
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
   const [name, setName] = useState("");
   const [player, setPlayer] = useState<Player | null>(null);
-  const [loading, setLoading] = useState(false);
+  // True from first render when a share link is present, so there's no flash of the
+  // "search to get started" empty state before the shared-player fetch below resolves.
+  const [loading, setLoading] = useState(() => new URLSearchParams(window.location.search).has("playerId"));
   const [error, setError] = useState<string | null>(null);
+  // Set once from ?playerId=&matchId= (the share link's CTA), so MatchList can auto-select
+  // the shared match instead of landing on an empty "search to get started" screen.
+  const [initialMatchId, setInitialMatchId] = useState<string | undefined>(undefined);
   // Bumped after a new analysis is recorded so the sidebar's history list re-fetches.
   const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
 
@@ -21,6 +26,22 @@ function App() {
       .get("/health")
       .then(() => setBackendOnline(true))
       .catch(() => setBackendOnline(false));
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sharedPlayerId = params.get("playerId");
+    const sharedMatchId = params.get("matchId");
+    if (!sharedPlayerId) return;
+
+    getPlayerById(sharedPlayerId)
+      .then((result) => {
+        setPlayer(result);
+        setName(result.name);
+        if (sharedMatchId) setInitialMatchId(sharedMatchId);
+      })
+      .catch((err) => setError(getErrorMessage(err, "Could not load the shared analysis.")))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleSearch = async () => {
@@ -79,6 +100,7 @@ function App() {
             <PlayerDashboard
               key={player.id}
               player={player}
+              initialMatchId={initialMatchId}
               onAnalysisRecorded={() => setHistoryRefreshToken((token) => token + 1)}
             />
           )}

@@ -28,6 +28,7 @@ interface MatchListProps {
   playerId: string;
   matchIds: string[];
   seasonStats: SeasonStats | null;
+  initialMatchId?: string;
   onAnalysisRecorded?: () => void;
 }
 
@@ -242,17 +243,23 @@ function SelectedMatchSkeleton() {
   );
 }
 
-function MatchList({ playerId, matchIds, seasonStats, onAnalysisRecorded }: MatchListProps) {
+function MatchList({ playerId, matchIds, seasonStats, initialMatchId, onAnalysisRecorded }: MatchListProps) {
   const displayedIds = matchIds.slice(0, MAX_MATCHES_DISPLAYED);
   const hiddenCount = matchIds.length - displayedIds.length;
   const pageCount = Math.max(1, Math.ceil(displayedIds.length / PAGE_SIZE));
 
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(() => {
+    if (!initialMatchId) return 0;
+    const idx = matchIds.indexOf(initialMatchId);
+    return idx >= 0 ? Math.floor(idx / PAGE_SIZE) : 0;
+  });
   const pageIds = displayedIds.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   // Caches every match fetched so far so revisiting a page never re-fetches it.
   const [matchCache, setMatchCache] = useState<Record<string, MatchState>>({});
-  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+  // Pre-selects the share link's target match immediately, rather than via a setState
+  // call inside the effect below (which would trigger an extra render for no benefit).
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(initialMatchId ?? null);
   const [selectedError, setSelectedError] = useState<string | null>(null);
 
   const [showSlowLoadNotice, setShowSlowLoadNotice] = useState(false);
@@ -262,6 +269,19 @@ function MatchList({ playerId, matchIds, seasonStats, onAnalysisRecorded }: Matc
   useEffect(() => {
     matchCacheRef.current = matchCache;
   }, [matchCache]);
+
+  // Fetches the share link's target match on mount, even if it fell outside the recent-
+  // matches window (PUBG only exposes ~14 days) - getMatchStats doesn't require it be listed.
+  useEffect(() => {
+    if (!initialMatchId) return;
+    getMatchStats(playerId, initialMatchId)
+      .then((match) => setMatchCache((prev) => ({ ...prev, [initialMatchId]: match })))
+      .catch(() => {
+        setMatchCache((prev) => ({ ...prev, [initialMatchId]: "error" }));
+        setSelectedError("This match could not be found for this player.");
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const idsForThisPage = matchIds.slice(0, MAX_MATCHES_DISPLAYED).slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);

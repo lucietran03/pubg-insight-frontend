@@ -14,10 +14,11 @@ import SectionTitle from "./SectionTitle";
 
 interface PlayerDashboardProps {
   player: Player;
+  initialMatchId?: string;
   onAnalysisRecorded?: () => void;
 }
 
-function PlayerDashboard({ player, onAnalysisRecorded }: PlayerDashboardProps) {
+function PlayerDashboard({ player, initialMatchId, onAnalysisRecorded }: PlayerDashboardProps) {
   // Fetched here, not inside SeasonStats, so both cards below can share it without a duplicate call.
   const [seasonStats, setSeasonStats] = useState<SeasonStatsData | null>(null);
   const [seasonStatsLoading, setSeasonStatsLoading] = useState(true);
@@ -127,6 +128,7 @@ function PlayerDashboard({ player, onAnalysisRecorded }: PlayerDashboardProps) {
               playerId={player.id}
               matchIds={player.recentMatchIds}
               seasonStats={seasonStats}
+              initialMatchId={initialMatchId}
               onAnalysisRecorded={onAnalysisRecorded}
             />
           </CardContent>

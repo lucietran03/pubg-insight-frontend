@@ -5,7 +5,24 @@ import { getInsights } from "../services/insightService";
 import { recordAnalysis } from "../services/historyService";
 import type { Insight } from "../types/insight";
 import { getErrorMessage } from "../utils/errorMessage";
+import { dedupeAdjacentWords } from "../utils/sanitizeInsightText";
 import SectionTitle from "./SectionTitle";
+
+// Applied once at the point the raw API result is accepted, so every downstream render site
+// (summary, lists, playstyle, etc.) gets clean text without each one re-implementing it.
+function sanitizeInsight(insight: Insight): Insight {
+  return {
+    ...insight,
+    summary: dedupeAdjacentWords(insight.summary),
+    strengths: insight.strengths.map(dedupeAdjacentWords),
+    weaknesses: insight.weaknesses.map(dedupeAdjacentWords),
+    riskFactors: insight.riskFactors.map(dedupeAdjacentWords),
+    recommendations: insight.recommendations.map(dedupeAdjacentWords),
+    playstyle: dedupeAdjacentWords(insight.playstyle),
+    seasonProgress: dedupeAdjacentWords(insight.seasonProgress),
+    trainingPriorities: insight.trainingPriorities.map(dedupeAdjacentWords),
+  };
+}
 
 interface AiInsightsProps {
   playerId: string;
@@ -177,11 +194,9 @@ function EvidenceList({
   return (
     <Box
       sx={{
-        p: 1.5,
-        borderRadius: 1.5,
-        border: "1px solid",
-        borderColor: (theme) => alpha(theme.palette[tone].main, 0.4),
-        bgcolor: (theme) => alpha(theme.palette[tone].main, 0.08),
+        pl: 1.5,
+        borderLeft: "3px solid",
+        borderColor: `${tone}.main`,
       }}
     >
       <SectionLabel text={label} color={`${tone}.main`} />
@@ -224,19 +239,22 @@ function ActionPlan({ items }: { items: string[] }) {
         {items.map((item, index) => {
           const { action, why } = splitRecommendation(item);
           const focus = inferFocusTag(item);
+          // Index-based styling is intentional here only - this is a ranked coaching list,
+          // not a strengths/weaknesses list where order must never affect presentation.
+          const isPrimary = index === 0;
           return (
-            <Stack key={item} direction="row" spacing={1.25} sx={{ alignItems: "flex-start" }}>
+            <Stack key={item} direction="row" spacing={isPrimary ? 1.75 : 1.25} sx={{ alignItems: "flex-start" }}>
               <Box
                 sx={{
                   flexShrink: 0,
-                  width: 20,
-                  height: 20,
+                  width: isPrimary ? 32 : 20,
+                  height: isPrimary ? 32 : 20,
                   borderRadius: "50%",
                   bgcolor: "primary.main",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 11,
+                  fontSize: isPrimary ? 16 : 11,
                   fontWeight: 800,
                   color: "#121212",
                 }}
@@ -244,7 +262,10 @@ function ActionPlan({ items }: { items: string[] }) {
                 {index + 1}
               </Box>
               <Box>
-                <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.6 }}>
+                <Typography
+                  variant={isPrimary ? "body1" : "body2"}
+                  sx={{ fontWeight: isPrimary ? 800 : 700, lineHeight: 1.6, color: isPrimary ? "text.primary" : "text.secondary" }}
+                >
                   {action}
                 </Typography>
                 {why && (
@@ -376,7 +397,7 @@ function AiInsights({ playerId, matchId, onAnalysisRecorded }: AiInsightsProps) 
     try {
       const [result] = await Promise.all([getInsights(playerId, matchId), minDurationPromise]);
       if (generationRef.current !== myGeneration) return;
-      setInsight(result);
+      setInsight(sanitizeInsight(result));
       // Secondary write - never blocks or surfaces an error for the primary insight flow.
       recordAnalysis(playerId, matchId)
         .then(() => onAnalysisRecorded?.())

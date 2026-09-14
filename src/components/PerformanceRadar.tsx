@@ -16,11 +16,11 @@ const AXES: { key: keyof RadarScores; label: string }[] = [
   { key: "survival", label: "Survival" },
 ];
 
-const WIDTH = 350;
-const HEIGHT = 325;
+const WIDTH = 440;
+const HEIGHT = 400;
 const CENTER_X = WIDTH / 2;
 const CENTER_Y = HEIGHT / 2 + 5;
-const MAX_RADIUS = 84;
+const MAX_RADIUS = 108;
 const LABEL_RADIUS = MAX_RADIUS * 1.35;
 const RING_FRACTIONS = [0.33, 0.66, 1];
 
@@ -56,7 +56,7 @@ function PerformanceRadar({ scores }: PerformanceRadarProps) {
     <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        style={{ width: "100%", maxWidth: 380, height: "auto" }}
+        style={{ width: "100%", maxWidth: 460, height: "auto" }}
         role="img"
         aria-label="Performance radar chart"
       >
@@ -130,9 +130,9 @@ function PerformanceRadar({ scores }: PerformanceRadarProps) {
           const anchor = Math.abs(x - CENTER_X) < 4 ? "middle" : x > CENTER_X ? "start" : "end";
           const value = Math.round(Math.max(0, Math.min(100, scores[axis.key])));
           return (
-            <text key={axis.key} x={x} y={y} textAnchor={anchor} dominantBaseline="middle" fontSize={11} fill={theme.palette.text.secondary}>
+            <text key={axis.key} x={x} y={y} textAnchor={anchor} dominantBaseline="middle" fontSize={12} fill={theme.palette.text.secondary}>
               {axis.label}
-              <tspan x={x} dy="1.3em" fontSize={14} fontWeight={800} fill={theme.palette.primary.main}>
+              <tspan x={x} dy="1.3em" fontSize={16} fontWeight={800} fill={theme.palette.primary.main}>
                 {value}
               </tspan>
             </text>

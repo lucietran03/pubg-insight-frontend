@@ -1,9 +1,8 @@
-import { Box, Stack, Typography } from "@mui/material";
+import { Box, Divider, Stack, Typography } from "@mui/material";
 import type { SeasonStats } from "../types/seasonStats";
 import DeltaIndicator from "./DeltaIndicator";
 import MetricHero from "./MetricHero";
 import PerformanceRadar from "./PerformanceRadar";
-import StatTile from "./StatTile";
 
 interface PerformanceBreakdownProps {
   stats: SeasonStats;
@@ -20,17 +19,63 @@ function SubLabel({ children }: { children: string }) {
   );
 }
 
-// Primary (Avg Damage, K/D) get the large MetricHero treatment; the rest are supporting
-// evidence for the radar's axes, not equal-weight headline numbers.
+interface RailMetric {
+  label: string;
+  value: string;
+  deltaPct?: number;
+}
+
+// Compact metric rail: one shared surface instead of five identical stat cards - each entry
+// is just a value/label pair separated by a divider, not its own bordered box.
+function MetricRail({ metrics }: { metrics: RailMetric[] }) {
+  return (
+    <Stack direction="row" spacing={0} sx={{ flexWrap: "wrap", rowGap: 1.5 }}>
+      {metrics.map((metric, index) => (
+        <Stack
+          key={metric.label}
+          direction="row"
+          spacing={{ xs: 0, sm: 2 }}
+          sx={{ alignItems: "center" }}
+        >
+          {index > 0 && (
+            <Divider orientation="vertical" flexItem sx={{ display: { xs: "none", sm: "block" }, mr: 2 }} />
+          )}
+          <Box sx={{ minWidth: 84, px: { xs: 1.5, sm: 0 } }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1 }}>
+              {metric.value}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+              {metric.label}
+            </Typography>
+            {metric.deltaPct !== undefined && <DeltaIndicator deltaPct={metric.deltaPct} />}
+          </Box>
+        </Stack>
+      ))}
+    </Stack>
+  );
+}
+
+// Primary (Avg Damage, K/D) get the large MetricHero headline treatment; the rest are
+// supporting evidence for the radar's axes, shown as one compact rail rather than five cards.
 function PerformanceBreakdown({ stats }: PerformanceBreakdownProps) {
   const comparison = stats.previousSeasonComparison;
 
+  const supportingMetrics: RailMetric[] = [
+    { label: "Headshot Rate", value: `${(stats.headshotRate * 100).toFixed(0)}%`, deltaPct: comparison?.headshotRateDeltaPct },
+    { label: "Top 10 Rate", value: `${(stats.top10Rate * 100).toFixed(0)}%`, deltaPct: comparison?.top10RateDeltaPct },
+    { label: "Avg Survival", value: `${Math.round(stats.avgSurvivalSeconds / 60)}m`, deltaPct: comparison?.avgSurvivalDeltaPct },
+    { label: "Longest Kill", value: `${stats.longestKillMeters.toFixed(0)}m`, deltaPct: comparison?.longestKillDeltaPct },
+    // Unbounded ratio (a kill without a prior knock still counts), same "x per y" shape as
+    // K/D Ratio - a % suffix would falsely imply a 0-100% bounded rate.
+    { label: "Finish Rate", value: `${stats.knockToKillRate.toFixed(2)}×` },
+  ];
+
   return (
     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "45% 1fr" }, gap: 3, alignItems: "center" }}>
-      <Stack spacing={2}>
+      <Stack spacing={3}>
         <Box>
           <SubLabel>Primary Signals</SubLabel>
-          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 1.5 }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 3 }}>
             <Box>
               <MetricHero label="Avg Damage" value={stats.avgDamage.toFixed(0)} />
               {comparison && <DeltaIndicator deltaPct={comparison.avgDamageDeltaPct} />}
@@ -44,32 +89,15 @@ function PerformanceBreakdown({ stats }: PerformanceBreakdownProps) {
 
         <Box>
           <SubLabel>Supporting Signals</SubLabel>
-          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 1.5 }}>
-            <Box>
-              <StatTile label="Headshot Rate" value={`${(stats.headshotRate * 100).toFixed(0)}%`} />
-              {comparison && <DeltaIndicator deltaPct={comparison.headshotRateDeltaPct} />}
-            </Box>
-            <Box>
-              <StatTile label="Top 10 Rate" value={`${(stats.top10Rate * 100).toFixed(0)}%`} />
-              {comparison && <DeltaIndicator deltaPct={comparison.top10RateDeltaPct} />}
-            </Box>
-            <Box>
-              <StatTile label="Avg Survival" value={`${Math.round(stats.avgSurvivalSeconds / 60)}m`} />
-              {comparison && <DeltaIndicator deltaPct={comparison.avgSurvivalDeltaPct} />}
-            </Box>
-            <Box>
-              <StatTile label="Longest Kill" value={`${stats.longestKillMeters.toFixed(0)}m`} />
-              {comparison && <DeltaIndicator deltaPct={comparison.longestKillDeltaPct} />}
-            </Box>
-            {/* Unbounded ratio (a kill without a prior knock still counts), same "x per y"
-                shape as K/D Ratio above - a % suffix would falsely imply a 0-100% bounded rate. */}
-            <StatTile label="Finish Rate" value={`${stats.knockToKillRate.toFixed(2)}×`} />
-          </Box>
+          <MetricRail metrics={supportingMetrics} />
         </Box>
       </Stack>
 
       <Box>
         <SubLabel>Player Profile</SubLabel>
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: -1, mb: 1 }}>
+          Performance DNA
+        </Typography>
         <PerformanceRadar scores={stats.radar} />
       </Box>
     </Box>

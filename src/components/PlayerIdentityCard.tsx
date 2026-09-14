@@ -48,9 +48,9 @@ function classificationLabel(axisScore: number, otherScores: number[]): string {
   return "Emerging trait";
 }
 
-// Collectible-badge treatment: a bordered card (not just a left accent strip) with a small
-// diamond marker, read as a player-profile badge rather than a plain text block. Typography/
-// shape personality only - no illustration, per the project's "safe tier" design decision.
+// Combat-identity composition: typography + a small diamond emblem, no box around it - a
+// bordered card here would just be another rectangle next to the player identity block.
+// Shape personality only, no illustration, per the project's "safe tier" design decision.
 function PlayerIdentityCard({ archetype, radar }: PlayerIdentityCardProps) {
   const axis = ARCHETYPE_AXIS[archetype];
   const allScores = Object.values(radar);
@@ -61,18 +61,7 @@ function PlayerIdentityCard({ archetype, radar }: PlayerIdentityCardProps) {
   const spread = Math.max(...allScores) - Math.min(...allScores);
 
   return (
-    <Box
-      sx={{
-        display: "inline-flex",
-        flexDirection: "column",
-        gap: 0.5,
-        p: 1.5,
-        borderRadius: "10px",
-        border: "1px solid",
-        borderColor: "primary.main",
-        bgcolor: (theme) => `${theme.palette.primary.main}14`,
-      }}
-    >
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
       <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
         <Box
           sx={{

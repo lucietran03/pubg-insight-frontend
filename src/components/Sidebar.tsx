@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Box, Button, Stack, TextField, Typography } from "@mui/material";
+import { Box, Button, Divider, Stack, TextField, Typography } from "@mui/material";
 import { getHistory } from "../services/historyService";
 import type { AnalysisHistoryEntry } from "../types/history";
 import type { Player } from "../types/player";
@@ -30,15 +30,13 @@ function HistoryItem({ entry }: { entry: AnalysisHistoryEntry }) {
   return (
     <Box
       sx={{
-        p: 1.25,
-        borderRadius: "6px",
-        bgcolor: "background.default",
-        border: "1px solid",
-        borderColor: "divider",
-        transition: "border-color 0.15s ease, background-color 0.15s ease",
+        py: 1.25,
+        pl: 1,
+        borderLeft: "2px solid",
+        borderColor: "transparent",
+        transition: "border-color 0.15s ease",
         "&:hover": {
           borderColor: "primary.main",
-          bgcolor: "background.paper",
         },
       }}
     >
@@ -107,7 +105,7 @@ function RecentlyAnalyzed({ player, historyRefreshToken }: { player: Player; his
       >
         Recently Analyzed
       </Typography>
-      <Stack spacing={1} sx={{ mt: 1 }}>
+      <Stack sx={{ mt: 1 }} divider={<Divider />}>
         {entries.length === 0 ? (
           <Typography variant="caption" color="text.secondary">
             No past analyses yet - generate an AI Insight to start building history.

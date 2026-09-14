@@ -14,7 +14,7 @@ interface WeaponBreakdownProps {
 function SubLabel({ children }: { children: string }) {
   return (
     <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 1 }}>
-      <Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: "primary.main" }} />
+      <Box sx={{ width: 5, height: 5, borderRadius: "1px", bgcolor: "primary.main", transform: "rotate(45deg)" }} />
       <Typography
         variant="caption"
         sx={{ fontWeight: 800, letterSpacing: 0.8, color: "text.secondary", textTransform: "uppercase" }}

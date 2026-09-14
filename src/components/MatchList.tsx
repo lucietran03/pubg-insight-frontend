@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Alert, Box, Chip, Divider, Pagination, Skeleton, Stack, Tooltip, Typography } from "@mui/material";
 import { keyframes } from "@emotion/react";
 import { getMatchStats } from "../services/matchService";
-import { getSeasonStats } from "../services/seasonStatsService";
 import type { Match } from "../types/match";
 import type { SeasonStats } from "../types/seasonStats";
 import { getErrorMessage } from "../utils/errorMessage";
@@ -31,6 +30,7 @@ const slideIn = keyframes`
 interface MatchListProps {
   playerId: string;
   matchIds: string[];
+  seasonStats: SeasonStats | null;
   onAnalysisRecorded?: () => void;
 }
 
@@ -46,13 +46,36 @@ function formatMatchDate(createdAt: string, includeTime = false): string {
   return `${dateLabel}, ${timeLabel}`;
 }
 
+// Reused across the app as the one signature marker shape (archetype emblem, this
+// "standout match" marker) rather than introducing a new glyph per context.
+function DiamondMarker({ size = 8 }: { size?: number }) {
+  return (
+    <Box
+      sx={{
+        width: size,
+        height: size,
+        borderRadius: "2px",
+        bgcolor: "primary.main",
+        transform: "rotate(45deg)",
+        flexShrink: 0,
+      }}
+    />
+  );
+}
+
 interface MatchCardProps {
   state: MatchState | undefined;
   selected: boolean;
+  seasonStats: SeasonStats | null;
   onClick: () => void;
 }
 
-function MatchCard({ state, selected, onClick }: MatchCardProps) {
+// Standout/below-average thresholds are real relative comparisons against the player's own
+// already-fetched season average damage, not fabricated or population-derived cutoffs.
+const STANDOUT_DAMAGE_MULTIPLIER = 1.5;
+const BELOW_AVERAGE_DAMAGE_MULTIPLIER = 0.5;
+
+function MatchCard({ state, selected, seasonStats, onClick }: MatchCardProps) {
   if (state === undefined || state === "loading") {
     return (
       <Box sx={{ p: 2, borderRadius: "6px", bgcolor: "background.default", minHeight: 84 }}>
@@ -92,6 +115,10 @@ function MatchCard({ state, selected, onClick }: MatchCardProps) {
   // Reuses the app's existing "Top 10" threshold (already a tracked season stat) rather
   // than inventing a new performance bucket.
   const isTopTen = state.winPlace <= 10;
+  const isStandout = !!seasonStats && seasonStats.avgDamage > 0
+    && state.damageDealt >= seasonStats.avgDamage * STANDOUT_DAMAGE_MULTIPLIER;
+  const isBelowAverage = !!seasonStats && seasonStats.avgDamage > 0
+    && state.damageDealt <= seasonStats.avgDamage * BELOW_AVERAGE_DAMAGE_MULTIPLIER;
 
   return (
     <Box
@@ -124,6 +151,7 @@ function MatchCard({ state, selected, onClick }: MatchCardProps) {
           <Typography variant="caption" color="text.secondary">
             {formatMatchDate(state.createdAt)}
           </Typography>
+          {isStandout && <DiamondMarker />}
         </Stack>
         <Chip label={state.gameMode} size="small" />
       </Stack>
@@ -132,7 +160,7 @@ function MatchCard({ state, selected, onClick }: MatchCardProps) {
         {state.mapName}
       </Typography>
 
-      <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-end", mt: "auto" }}>
+      <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-end", mt: "auto", opacity: isBelowAverage ? 0.6 : 1 }}>
         <Box>
           <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1 }}>
             {state.kills}
@@ -220,7 +248,7 @@ function SelectedMatchSkeleton() {
   );
 }
 
-function MatchList({ playerId, matchIds, onAnalysisRecorded }: MatchListProps) {
+function MatchList({ playerId, matchIds, seasonStats, onAnalysisRecorded }: MatchListProps) {
   const displayedIds = matchIds.slice(0, MAX_MATCHES_DISPLAYED);
   const hiddenCount = matchIds.length - displayedIds.length;
   const pageCount = Math.max(1, Math.ceil(displayedIds.length / PAGE_SIZE));
@@ -233,11 +261,6 @@ function MatchList({ playerId, matchIds, onAnalysisRecorded }: MatchListProps) {
   const [matchCache, setMatchCache] = useState<Record<string, MatchState>>({});
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [selectedError, setSelectedError] = useState<string | null>(null);
-
-  // Fetched only once a match is selected (to save rate-limit budget) and cached for the
-  // whole player search.
-  const [seasonStats, setSeasonStats] = useState<SeasonStats | null>(null);
-  const seasonStatsFetchedRef = useRef(false);
 
   const [showSlowLoadNotice, setShowSlowLoadNotice] = useState(false);
 
@@ -299,18 +322,6 @@ function MatchList({ playerId, matchIds, onAnalysisRecorded }: MatchListProps) {
     }
   };
 
-  // Fires once, the first time a match is selected, so the delta chips below have
-  // something to compare against.
-  useEffect(() => {
-    if (selectedMatchId === null || seasonStatsFetchedRef.current) return;
-    seasonStatsFetchedRef.current = true;
-    getSeasonStats(playerId)
-      .then(setSeasonStats)
-      .catch(() => {
-        // Non-critical: the delta chips simply won't render without season stats.
-      });
-  }, [selectedMatchId, playerId]);
-
   if (matchIds.length === 0) {
     return (
       <Typography color="text.secondary" variant="body2">
@@ -368,6 +379,7 @@ function MatchList({ playerId, matchIds, onAnalysisRecorded }: MatchListProps) {
             key={matchId}
             state={matchCache[matchId]}
             selected={matchId === selectedMatchId}
+            seasonStats={seasonStats}
             onClick={() => handleSelect(matchId)}
           />
         ))}

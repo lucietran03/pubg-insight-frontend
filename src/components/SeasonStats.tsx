@@ -9,21 +9,25 @@ interface SeasonStatsProps {
   onRetry: () => void;
 }
 
+function pluralize(count: number, noun: string): string {
+  return `${count} ${noun}${count === 1 ? "" : "s"}`;
+}
+
 // Compact card: identity + headline win rate only. Full stat grid and radar live in
 // PerformanceBreakdown so this card matches its sibling's height.
 function SeasonStats({ stats, loading, error, onRetry }: SeasonStatsProps) {
   if (loading) {
     return (
-      <Box sx={{ mt: 1 }}>
-        <Skeleton variant="text" width="50%" height={48} />
-        <Skeleton variant="text" width="80%" height={20} sx={{ mt: 0.5 }} />
+      <Box sx={{ mt: 1, textAlign: "center" }}>
+        <Skeleton variant="text" width="50%" height={48} sx={{ mx: "auto" }} />
+        <Skeleton variant="text" width="80%" height={20} sx={{ mt: 0.5, mx: "auto" }} />
       </Box>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ mt: 2 }}>
+      <Box sx={{ mt: 2, textAlign: "center" }}>
         <Typography variant="body2" color="text.secondary">
           ⚠ {error}
         </Typography>
@@ -43,12 +47,15 @@ function SeasonStats({ stats, loading, error, onRetry }: SeasonStatsProps) {
   const comparison = stats.previousSeasonComparison;
 
   return (
-    <Box sx={{ mt: 1 }}>
-      <Typography variant="h3" sx={{ fontWeight: 800, color: "primary.main", lineHeight: 1, pl: 0.25 }}>
+    <Box sx={{ mt: 1, textAlign: "center" }}>
+      <Typography variant="h3" sx={{ fontWeight: 800, color: "primary.main", lineHeight: 1 }}>
         {(stats.winRate * 100).toFixed(1)}%
       </Typography>
-      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25, pl: 0.25 }}>
-        Season Win Rate · {stats.wins} wins / {stats.roundsPlayed} rounds (all modes)
+      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+        SEASON WIN RATE
+      </Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25 }}>
+        {pluralize(stats.wins, "win")} · {pluralize(stats.roundsPlayed, "round")} · all modes
       </Typography>
       {comparison && <DeltaIndicator deltaPct={comparison.winRateDeltaPct} />}
     </Box>

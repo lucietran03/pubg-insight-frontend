@@ -43,45 +43,59 @@ function PlayerDashboard({ player, onAnalysisRecorded }: PlayerDashboardProps) {
       <RevealOnMount delayMs={0}>
         <Card>
           <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-            <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-              <Box
-                sx={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: "50%",
-                  bgcolor: "primary.main",
-                  color: "background.default",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontWeight: 800,
-                  fontSize: "1.4rem",
-                  flexShrink: 0,
-                }}
-              >
-                {player.name.charAt(0).toUpperCase()}
-              </Box>
-              <Box sx={{ minWidth: 0 }}>
-                <Typography variant="h5" sx={{ fontWeight: 800, wordBreak: "break-word", lineHeight: 1.15 }}>
-                  {player.name}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25, lineHeight: 1.4 }}>
-                  {player.shardId.toUpperCase()}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.4 }}>
-                  {player.recentMatchIds.length} matches · last 14 days
-                </Typography>
-              </Box>
-            </Stack>
-
-            {seasonStats && (
-              <Stack direction="row" spacing={1.5} sx={{ mt: 2, flexWrap: "wrap", rowGap: 1.5 }}>
-                <PlayerIdentityCard archetype={seasonStats.archetype} radar={seasonStats.radar} />
-                {seasonStats.previousSeasonComparison && (
-                  <RecentFormChip winRateDeltaPct={seasonStats.previousSeasonComparison.winRateDeltaPct} />
-                )}
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", sm: seasonStats ? "auto 1px 1fr" : "1fr" },
+                gap: { xs: 2, sm: 3 },
+                alignItems: "center",
+              }}
+            >
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                <Box
+                  sx={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: "50%",
+                    bgcolor: "primary.main",
+                    color: "background.default",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 800,
+                    fontSize: "1.4rem",
+                    flexShrink: 0,
+                  }}
+                >
+                  {player.name.charAt(0).toUpperCase()}
+                </Box>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="h5" sx={{ fontWeight: 800, wordBreak: "break-word", lineHeight: 1.15 }}>
+                    {player.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25, lineHeight: 1.4 }}>
+                    {player.shardId.toUpperCase()}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.4 }}>
+                    {player.recentMatchIds.length} matches · last 14 days
+                  </Typography>
+                </Box>
               </Stack>
-            )}
+
+              {seasonStats && (
+                <>
+                  <Box sx={{ display: { xs: "none", sm: "block" }, height: "100%", bgcolor: "divider" }} />
+                  <Box>
+                    <PlayerIdentityCard archetype={seasonStats.archetype} radar={seasonStats.radar} />
+                    {seasonStats.previousSeasonComparison && (
+                      <Box sx={{ mt: 1 }}>
+                        <RecentFormChip winRateDeltaPct={seasonStats.previousSeasonComparison.winRateDeltaPct} />
+                      </Box>
+                    )}
+                  </Box>
+                </>
+              )}
+            </Box>
           </CardContent>
         </Card>
       </RevealOnMount>
@@ -110,7 +124,12 @@ function PlayerDashboard({ player, onAnalysisRecorded }: PlayerDashboardProps) {
         <Card sx={{ mt: 2 }}>
           <CardContent sx={{ p: { xs: 2, md: 3 } }}>
             <SectionTitle>Recent Matches</SectionTitle>
-            <MatchList playerId={player.id} matchIds={player.recentMatchIds} onAnalysisRecorded={onAnalysisRecorded} />
+            <MatchList
+              playerId={player.id}
+              matchIds={player.recentMatchIds}
+              seasonStats={seasonStats}
+              onAnalysisRecorded={onAnalysisRecorded}
+            />
           </CardContent>
         </Card>
       </RevealOnMount>

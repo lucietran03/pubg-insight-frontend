@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Alert, Box, Button, LinearProgress, Stack, Typography } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { getInsights } from "../services/insightService";
+import { recordAnalysis } from "../services/historyService";
 import type { Insight } from "../types/insight";
 import { getErrorMessage } from "../utils/errorMessage";
 import SectionTitle from "./SectionTitle";
@@ -9,6 +10,8 @@ import SectionTitle from "./SectionTitle";
 interface AiInsightsProps {
   playerId: string;
   matchId: string;
+  // Lets the sidebar's Recently Analyzed list refresh right after a new entry is persisted.
+  onAnalysisRecorded?: () => void;
 }
 
 // Purely narrative - the backend makes one call, not seven - staged to read as a pipeline
@@ -326,7 +329,7 @@ function AnalysisProgress({ stageIndex, progress }: { stageIndex: number; progre
   );
 }
 
-function AiInsights({ playerId, matchId }: AiInsightsProps) {
+function AiInsights({ playerId, matchId, onAnalysisRecorded }: AiInsightsProps) {
   const [insight, setInsight] = useState<Insight | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -373,6 +376,10 @@ function AiInsights({ playerId, matchId }: AiInsightsProps) {
       const [result] = await Promise.all([getInsights(playerId, matchId), minDurationPromise]);
       if (generationRef.current !== myGeneration) return;
       setInsight(result);
+      // Secondary write - never blocks or surfaces an error for the primary insight flow.
+      recordAnalysis(playerId, matchId)
+        .then(() => onAnalysisRecorded?.())
+        .catch(() => {});
     } catch (err) {
       // Honor the minimum duration on failure too, so a fast error doesn't cut the staged
       // sequence off mid-stage.

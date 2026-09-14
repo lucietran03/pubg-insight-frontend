@@ -2,6 +2,7 @@ import type { Player } from "../types/player";
 import type { SeasonStats } from "../types/seasonStats";
 import type { Match } from "../types/match";
 import type { Insight } from "../types/insight";
+import type { AnalysisHistoryEntry } from "../types/history";
 
 // Exercises the app without a real backend. Enable with VITE_USE_MOCK_DATA=true.
 export const MOCK_MODE_ENABLED = import.meta.env.VITE_USE_MOCK_DATA === "true";
@@ -83,6 +84,38 @@ export const mockInsight: Insight = {
 
 export function getMockMatch(matchId: string): Match | undefined {
   return mockMatchesById[matchId];
+}
+
+// Keyed by playerId, mirroring the backend's (playerId, matchId) unique-key behavior:
+// re-recording the same match for a player replaces its prior entry rather than duplicating it.
+const mockHistoryByPlayer: Record<string, Map<string, AnalysisHistoryEntry>> = {};
+
+export function mockHistoryFor(playerId: string): AnalysisHistoryEntry[] {
+  return Array.from(mockHistoryByPlayer[playerId]?.values() ?? []);
+}
+
+export function recordMockHistoryEntry(playerId: string, matchId: string): AnalysisHistoryEntry {
+  const match = getMockMatch(matchId);
+  const entry: AnalysisHistoryEntry = {
+    playerId,
+    matchId,
+    mapName: match?.mapName ?? "Erangel",
+    gameMode: match?.gameMode ?? "Squad",
+    kills: match?.kills ?? 0,
+    headshotRate: match?.headshotRate ?? 0,
+    damageDealt: match?.damageDealt ?? 0,
+    timeSurvivedSeconds: match?.timeSurvivedSeconds ?? 0,
+    winPlace: match?.winPlace ?? 0,
+    insightSummary: mockInsight.summary,
+    strengths: mockInsight.strengths,
+    weaknesses: mockInsight.weaknesses,
+    recommendations: mockInsight.recommendations,
+    createdAt: new Date().toISOString(),
+  };
+
+  if (!mockHistoryByPlayer[playerId]) mockHistoryByPlayer[playerId] = new Map();
+  mockHistoryByPlayer[playerId].set(matchId, entry);
+  return entry;
 }
 
 // Artificial delay so loading/skeleton states are visible in mock mode.

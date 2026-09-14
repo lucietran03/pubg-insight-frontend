@@ -23,6 +23,7 @@ const PAGE_SIZE = 6;
 interface MatchListProps {
   playerId: string;
   matchIds: string[];
+  onAnalysisRecorded?: () => void;
 }
 
 type MatchState = Match | "loading" | "error";
@@ -195,7 +196,7 @@ function SelectedMatchSkeleton() {
   );
 }
 
-function MatchList({ playerId, matchIds }: MatchListProps) {
+function MatchList({ playerId, matchIds, onAnalysisRecorded }: MatchListProps) {
   const displayedIds = matchIds.slice(0, MAX_MATCHES_DISPLAYED);
   const hiddenCount = matchIds.length - displayedIds.length;
   const pageCount = Math.max(1, Math.ceil(displayedIds.length / PAGE_SIZE));
@@ -446,7 +447,14 @@ function MatchList({ playerId, matchIds }: MatchListProps) {
             <WeaponBreakdown key={`weapons-${selectedMatchId}`} playerId={playerId} matchId={selectedMatchId} />
           )}
 
-          {selectedMatchId && <AiInsights key={`insights-${selectedMatchId}`} playerId={playerId} matchId={selectedMatchId} />}
+          {selectedMatchId && (
+            <AiInsights
+              key={`insights-${selectedMatchId}`}
+              playerId={playerId}
+              matchId={selectedMatchId}
+              onAnalysisRecorded={onAnalysisRecorded}
+            />
+          )}
         </Box>
       )}
     </Box>

@@ -1,7 +1,6 @@
 import { Box, Skeleton, Typography } from "@mui/material";
 import type { SeasonStats as SeasonStatsData } from "../types/seasonStats";
 import DeltaIndicator from "./DeltaIndicator";
-import PlayerIdentityCard from "./PlayerIdentityCard";
 
 interface SeasonStatsProps {
   stats: SeasonStatsData | null;
@@ -45,8 +44,6 @@ function SeasonStats({ stats, loading, error, onRetry }: SeasonStatsProps) {
 
   return (
     <Box sx={{ mt: 1 }}>
-      <PlayerIdentityCard archetype={stats.archetype} radar={stats.radar} />
-
       <Typography variant="h3" sx={{ fontWeight: 800, color: "primary.main", lineHeight: 1, pl: 0.25 }}>
         {(stats.winRate * 100).toFixed(1)}%
       </Typography>

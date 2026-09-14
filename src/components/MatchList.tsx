@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Box, Chip, Divider, Pagination, Skeleton, Stack, Typography } from "@mui/material";
+import { Alert, Box, Chip, Divider, Pagination, Skeleton, Stack, Tooltip, Typography } from "@mui/material";
 import { keyframes } from "@emotion/react";
 import { getMatchStats } from "../services/matchService";
 import { getSeasonStats } from "../services/seasonStatsService";
@@ -89,6 +89,10 @@ function MatchCard({ state, selected, onClick }: MatchCardProps) {
     );
   }
 
+  // Reuses the app's existing "Top 10" threshold (already a tracked season stat) rather
+  // than inventing a new performance bucket.
+  const isTopTen = state.winPlace <= 10;
+
   return (
     <Box
       onClick={onClick}
@@ -98,6 +102,8 @@ function MatchCard({ state, selected, onClick }: MatchCardProps) {
         bgcolor: "background.default",
         border: "1px solid",
         borderColor: selected ? "primary.main" : restingBorderColor,
+        borderLeftWidth: isTopTen ? 4 : 1,
+        borderLeftColor: isTopTen && !selected ? "primary.main" : undefined,
         cursor: "pointer",
         display: "flex",
         flexDirection: "column",
@@ -112,7 +118,7 @@ function MatchCard({ state, selected, onClick }: MatchCardProps) {
     >
       <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start" }}>
         <Stack direction="row" spacing={1} sx={{ alignItems: "baseline" }}>
-          <Typography variant="body2" sx={{ fontWeight: 800 }}>
+          <Typography variant="body2" sx={{ fontWeight: 800, color: isTopTen ? "primary.main" : "text.primary" }}>
             #{state.winPlace}
           </Typography>
           <Typography variant="caption" color="text.secondary">
@@ -331,11 +337,23 @@ function MatchList({ playerId, matchIds, onAnalysisRecorded }: MatchListProps) {
 
   return (
     <Box>
-      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
-        Match data loads live from PUBG's own API, which limits how many requests can be
-        made per minute — loading can take a few seconds per match. This is a PUBG
-        platform limit, not an app performance issue.
-      </Typography>
+      <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", mb: 1 }}>
+        <Tooltip
+          title="Match data loads live from PUBG's own API, which limits how many requests
+            can be made per minute — loading can take a few seconds per match. This is a
+            PUBG platform limit, not an app performance issue."
+          arrow
+        >
+          <Typography
+            component="span"
+            variant="caption"
+            color="text.secondary"
+            sx={{ cursor: "default", borderBottom: "1px dotted", borderColor: "text.secondary" }}
+          >
+            ⓘ Why this can take a moment
+          </Typography>
+        </Tooltip>
+      </Stack>
 
       {showSlowLoadNotice && (
         <Alert severity="info" sx={{ mb: 1.5 }}>
@@ -382,7 +400,22 @@ function MatchList({ playerId, matchIds, onAnalysisRecorded }: MatchListProps) {
       )}
 
       {selectedMatch && (
-        <Box sx={{ mt: 2, bgcolor: "background.default", borderRadius: "6px", p: 2.5 }}>
+        <Box sx={{ mt: 3 }}>
+          <Typography
+            variant="caption"
+            sx={{ display: "block", fontWeight: 800, letterSpacing: 1, color: "primary.main", mb: 1 }}
+          >
+            MATCH ANALYSIS
+          </Typography>
+          <Box
+            sx={{
+              bgcolor: "background.paper",
+              borderRadius: "6px",
+              borderTop: "2px solid",
+              borderColor: "primary.main",
+              p: 2.5,
+            }}
+          >
           <Stack
             direction={{ xs: "column", sm: "row" }}
             spacing={{ xs: 1.5, sm: 3 }}
@@ -473,6 +506,7 @@ function MatchList({ playerId, matchIds, onAnalysisRecorded }: MatchListProps) {
               onAnalysisRecorded={onAnalysisRecorded}
             />
           )}
+          </Box>
         </Box>
       )}
     </Box>

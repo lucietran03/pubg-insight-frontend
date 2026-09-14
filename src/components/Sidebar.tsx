@@ -12,7 +12,6 @@ interface SidebarProps {
   player: Player | null;
   backendOnline: boolean | null;
   historyRefreshToken: number;
-  playersSearchedCount: number;
 }
 
 const MAX_HISTORY_ITEMS = 5;
@@ -121,19 +120,6 @@ function RecentlyAnalyzed({ player, historyRefreshToken }: { player: Player; his
   );
 }
 
-function StatBlock({ value, label }: { value: number; label: string }) {
-  return (
-    <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "baseline" }}>
-      <Typography variant="body2" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.1 }}>
-        {value}
-      </Typography>
-    </Stack>
-  );
-}
-
 function Sidebar({
   name,
   onNameChange,
@@ -142,7 +128,6 @@ function Sidebar({
   player,
   backendOnline,
   historyRefreshToken,
-  playersSearchedCount,
 }: SidebarProps) {
   const statusColor =
     backendOnline === null ? "text.disabled" : backendOnline ? "success.main" : "error.main";
@@ -186,20 +171,6 @@ function Sidebar({
         <Button variant="contained" onClick={onSearch} disabled={loading} sx={{ fontWeight: 700, letterSpacing: 0.5 }}>
           Search
         </Button>
-      </Stack>
-
-      <Stack
-        spacing={1}
-        sx={{
-          mt: 3,
-          p: 1.5,
-          borderRadius: "6px",
-          bgcolor: "background.paper",
-          border: "1px solid",
-          borderColor: "divider",
-        }}
-      >
-        <StatBlock value={playersSearchedCount} label="Players searched" />
       </Stack>
 
       {player && <RecentlyAnalyzed player={player} historyRefreshToken={historyRefreshToken} />}

@@ -15,8 +15,6 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   // Bumped after a new analysis is recorded so the sidebar's history list re-fetches.
   const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
-  // Real count for this browser session (not a fabricated global total) - shown in the sidebar.
-  const [playersSearchedCount, setPlayersSearchedCount] = useState(0);
 
   useEffect(() => {
     api
@@ -36,7 +34,6 @@ function App() {
     try {
       const result = await searchPlayer(trimmedName);
       setPlayer(result);
-      setPlayersSearchedCount((count) => count + 1);
     } catch (err) {
       setError(getErrorMessage(err, `Could not find player "${trimmedName}"`));
     } finally {
@@ -54,7 +51,6 @@ function App() {
         player={player}
         backendOnline={backendOnline}
         historyRefreshToken={historyRefreshToken}
-        playersSearchedCount={playersSearchedCount}
       />
 
       <Box sx={{ flexGrow: 1, minWidth: 0 }}>

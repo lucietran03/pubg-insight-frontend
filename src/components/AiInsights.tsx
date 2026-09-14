@@ -56,11 +56,11 @@ function splitEvidence(sentence: string): { title: string; evidence: string | nu
       const before = trimmed.slice(0, idx).trim();
       const after = trimmed.slice(idx + delimiter.length).trim();
       if (before.length > 0 && after.length > 2 && /\d/.test(after)) {
-        return { title: before, evidence: capitalizeFragment(after.replace(/\.$/, "")) };
+        return { title: capitalizeFragment(before), evidence: capitalizeFragment(after.replace(/\.$/, "")) };
       }
     }
   }
-  return { title: trimmed, evidence: null };
+  return { title: capitalizeFragment(trimmed), evidence: null };
 }
 
 // Splits a recommendation sentence into action + WHY at the first rationale marker present,
@@ -76,11 +76,11 @@ function splitRecommendation(sentence: string): { action: string; why: string | 
       const action = trimmed.slice(0, idx).trim().replace(/[,;]$/, "");
       const why = trimmed.slice(idx + marker.length).trim().replace(/\.$/, "");
       if (action.length > 0 && why.length > 4) {
-        return { action, why: capitalizeFragment(why) };
+        return { action: capitalizeFragment(action), why: capitalizeFragment(why) };
       }
     }
   }
-  return { action: trimmed, why: null };
+  return { action: capitalizeFragment(trimmed), why: null };
 }
 
 // Inferred from keywords in the recommendation's own text, not a separate backend field.
@@ -197,7 +197,7 @@ function EvidenceList({
                 {glyph}
               </Typography>
               <Box>
-                <Typography variant="body2" sx={{ lineHeight: 1.5 }}>
+                <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.5 }}>
                   {title}
                 </Typography>
                 {evidence && (

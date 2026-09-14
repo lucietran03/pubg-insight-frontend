@@ -48,8 +48,9 @@ function classificationLabel(axisScore: number, otherScores: number[]): string {
   return "Emerging trait";
 }
 
-// Archetype title is the hero here; the win-rate hero metric lives separately in
-// SeasonStats.tsx.
+// Collectible-badge treatment: a bordered card (not just a left accent strip) with a small
+// diamond marker, read as a player-profile badge rather than a plain text block. Typography/
+// shape personality only - no illustration, per the project's "safe tier" design decision.
 function PlayerIdentityCard({ archetype, radar }: PlayerIdentityCardProps) {
   const axis = ARCHETYPE_AXIS[archetype];
   const allScores = Object.values(radar);
@@ -60,33 +61,49 @@ function PlayerIdentityCard({ archetype, radar }: PlayerIdentityCardProps) {
   const spread = Math.max(...allScores) - Math.min(...allScores);
 
   return (
-    <Box sx={{ mb: 1.5, borderLeft: "3px solid", borderColor: "primary.main", pl: 1.25 }}>
-      <Typography
-        variant="h5"
-        component="h3"
-        sx={{ fontWeight: 800, color: "primary.main", letterSpacing: 0.2, lineHeight: 1.15 }}
-      >
-        {archetype}
-      </Typography>
-
-      <Box sx={{ mt: 0.5 }}>
-        {axis && axisScore !== undefined ? (
-          <>
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontWeight: 700 }}>
-              {AXIS_LABELS[axis]} {axisScore}/100
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-              {classificationLabel(axisScore, otherScores)}
-            </Typography>
-          </>
-        ) : (
-          <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontWeight: 700 }}>
-            Even spread · {spread}pt range across all roles
-          </Typography>
-        )}
+    <Box
+      sx={{
+        display: "inline-flex",
+        flexDirection: "column",
+        gap: 0.5,
+        p: 1.5,
+        borderRadius: "10px",
+        border: "1px solid",
+        borderColor: "primary.main",
+        bgcolor: (theme) => `${theme.palette.primary.main}14`,
+      }}
+    >
+      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+        <Box
+          sx={{
+            width: 8,
+            height: 8,
+            borderRadius: "2px",
+            bgcolor: "primary.main",
+            transform: "rotate(45deg)",
+            flexShrink: 0,
+          }}
+        />
+        <Typography
+          variant="subtitle1"
+          component="h3"
+          sx={{ fontWeight: 800, color: "primary.main", letterSpacing: 0.2, lineHeight: 1.15 }}
+        >
+          {archetype}
+        </Typography>
       </Box>
 
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+      {axis && axisScore !== undefined ? (
+        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+          {AXIS_LABELS[axis]} {axisScore}/100 · {classificationLabel(axisScore, otherScores)}
+        </Typography>
+      ) : (
+        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+          Even spread · {spread}pt range across all roles
+        </Typography>
+      )}
+
+      <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 320 }}>
         {ARCHETYPE_BLURBS[archetype] ?? "Playstyle profile derived from this season's stats."}
       </Typography>
     </Box>

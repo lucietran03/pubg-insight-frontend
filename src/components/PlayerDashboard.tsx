@@ -6,6 +6,8 @@ import type { SeasonStats as SeasonStatsData } from "../types/seasonStats";
 import { getErrorMessage } from "../utils/errorMessage";
 import MatchList from "./MatchList";
 import PerformanceBreakdown from "./PerformanceBreakdown";
+import PlayerIdentityCard from "./PlayerIdentityCard";
+import RecentFormChip from "./RecentFormChip";
 import RevealOnMount from "./RevealOnMount";
 import SeasonStats from "./SeasonStats";
 import SectionTitle from "./SectionTitle";
@@ -71,6 +73,15 @@ function PlayerDashboard({ player, onAnalysisRecorded }: PlayerDashboardProps) {
                 </Typography>
               </Box>
             </Stack>
+
+            {seasonStats && (
+              <Stack direction="row" spacing={1.5} sx={{ mt: 2, flexWrap: "wrap", rowGap: 1.5 }}>
+                <PlayerIdentityCard archetype={seasonStats.archetype} radar={seasonStats.radar} />
+                {seasonStats.previousSeasonComparison && (
+                  <RecentFormChip winRateDeltaPct={seasonStats.previousSeasonComparison.winRateDeltaPct} />
+                )}
+              </Stack>
+            )}
           </CardContent>
         </Card>
       </RevealOnMount>

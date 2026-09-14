@@ -511,7 +511,7 @@ function AiInsights({ playerId, matchId, onAnalysisRecorded }: AiInsightsProps) 
           )}
 
           {hasRiskFactors && (
-            <Box sx={{ mt: 1.5 }}>
+            <Box sx={{ mt: 5 }}>
               <EvidenceList label="ONGOING RISK FACTORS" items={riskFactorItems} glyph="⚠" tone="warning" />
             </Box>
           )}

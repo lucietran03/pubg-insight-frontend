@@ -18,8 +18,7 @@ interface PlayerDashboardProps {
 }
 
 function PlayerDashboard({ player, onAnalysisRecorded }: PlayerDashboardProps) {
-  // Fetched here (not inside SeasonStats) so both the compact and full-width cards below
-  // can share it without a duplicate call.
+  // Fetched here, not inside SeasonStats, so both cards below can share it without a duplicate call.
   const [seasonStats, setSeasonStats] = useState<SeasonStatsData | null>(null);
   const [seasonStatsLoading, setSeasonStatsLoading] = useState(true);
   const [seasonStatsError, setSeasonStatsError] = useState<string | null>(null);

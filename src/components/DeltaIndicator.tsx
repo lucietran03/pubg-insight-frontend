@@ -5,15 +5,13 @@ interface DeltaIndicatorProps {
   deltaPct: number;
 }
 
-// Comparison content: slides/fades in distinctly from progress content's fill-up animation,
-// reading as "here's the contrast" rather than "here's a value being measured".
+// Slides/fades in distinctly from a fill-up animation, reading as contrast rather than a value being measured.
 const slideIn = keyframes`
   from { opacity: 0; transform: translateX(-6px); }
   to { opacity: 1; transform: translateX(0); }
 `;
 
-// Small "vs last season" indicator, shared by the compact season-overview card and the
-// full performance breakdown - both compare the same SeasonComparison fields.
+// Shared by both season-overview and performance-breakdown cards since both compare the same SeasonComparison fields.
 function DeltaIndicator({ deltaPct }: DeltaIndicatorProps) {
   const rounded = Math.round(deltaPct);
 

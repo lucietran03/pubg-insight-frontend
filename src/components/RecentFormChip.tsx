@@ -4,8 +4,7 @@ interface RecentFormChipProps {
   winRateDeltaPct: number;
 }
 
-// Compact pill version of DeltaIndicator's win-rate comparison, sized for the Player
-// Dossier row rather than sitting under a stat tile.
+// Compact pill version of DeltaIndicator's win-rate comparison, sized for the identity row rather than a stat tile.
 function RecentFormChip({ winRateDeltaPct }: RecentFormChipProps) {
   const rounded = Math.round(winRateDeltaPct);
   if (rounded === 0) return null;

@@ -29,8 +29,7 @@ const RING_SIZE = 76;
 const RING_RADIUS = 40;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
-// Ring gauge via SVG stroke-dasharray, same hand-rolled convention as PerformanceRadar.
-// Top weapon gets a gold border so the eye lands there first.
+// Same hand-rolled SVG ring convention as PerformanceRadar; top weapon gets a border so the eye lands there first.
 function WeaponGaugeCard({ weapon, share, isTop }: { weapon: WeaponKill; share: number; isTop: boolean }) {
   const theme = useTheme();
   const arcLength = share * RING_CIRCUMFERENCE;
@@ -90,15 +89,13 @@ function WeaponGaugeCard({ weapon, share, isTop }: { weapon: WeaponKill; share: 
   );
 }
 
-// Fails silently by design: a missing breakdown (expired telemetry, a 0-kill match, a
-// transient fetch failure) just means this optional panel doesn't render - no error UI,
-// no retry button.
+// Fails silently by design: a missing breakdown (expired telemetry, 0-kill match, fetch failure)
+// just skips rendering this optional panel - no error UI, no retry button.
 function WeaponBreakdown({ playerId, matchId }: WeaponBreakdownProps) {
   const [breakdown, setBreakdown] = useState<MatchCombatBreakdown | null>(null);
 
   useEffect(() => {
-    // No need to reset `breakdown` on matchId change: MatchList mounts this with
-    // key={selectedMatchId}, so a new match is always a fresh mount.
+    // No need to reset `breakdown` on matchId change - MatchList mounts this with key={selectedMatchId}, always a fresh mount.
     let cancelled = false;
 
     getWeaponBreakdown(playerId, matchId)
@@ -117,8 +114,7 @@ function WeaponBreakdown({ playerId, matchId }: WeaponBreakdownProps) {
   const weapons = breakdown?.weapons ?? [];
   // Only show buckets with at least one kill; an all-zero row would be noise.
   const shotDistances = (breakdown?.shotDistances ?? []).filter((bucket) => bucket.kills > 0);
-  // Backend always returns all five body-part labels (even at 0); filtering zero rows here
-  // is just a display choice.
+  // Backend always returns all five body-part labels (even at 0) - filtering zero rows is a display choice.
   const bodyPartDamage = (breakdown?.bodyPartDamage ?? []).filter((part) => part.hits > 0);
 
   if (weapons.length === 0 && shotDistances.length === 0 && bodyPartDamage.length === 0) {

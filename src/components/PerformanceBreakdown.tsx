@@ -25,9 +25,7 @@ interface RailMetric {
   deltaPct?: number;
 }
 
-// Compact metric matrix: a 2-column grid instead of five identical stat cards - each entry
-// is just a value/label pair, not its own bordered box. 2 columns keeps each cell wide
-// enough to read comfortably in the narrower left column next to the radar.
+// 2-column grid instead of stat cards - keeps each cell wide enough to read next to the radar.
 function MetricRail({ metrics }: { metrics: RailMetric[] }) {
   return (
     <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", columnGap: 2, rowGap: 1.5 }}>
@@ -46,8 +44,7 @@ function MetricRail({ metrics }: { metrics: RailMetric[] }) {
   );
 }
 
-// Primary (Avg Damage, K/D) get the large MetricHero headline treatment; the rest are
-// supporting evidence for the radar's axes, shown as one compact rail rather than five cards.
+// Avg Damage/K-D get the large MetricHero treatment; the rest are supporting evidence shown as one compact rail.
 function PerformanceBreakdown({ stats }: PerformanceBreakdownProps) {
   const comparison = stats.previousSeasonComparison;
 
@@ -56,8 +53,7 @@ function PerformanceBreakdown({ stats }: PerformanceBreakdownProps) {
     { label: "Top 10 Rate", value: `${(stats.top10Rate * 100).toFixed(0)}%`, deltaPct: comparison?.top10RateDeltaPct },
     { label: "Avg Survival", value: `${Math.round(stats.avgSurvivalSeconds / 60)}m`, deltaPct: comparison?.avgSurvivalDeltaPct },
     { label: "Longest Kill", value: `${stats.longestKillMeters.toFixed(0)}m`, deltaPct: comparison?.longestKillDeltaPct },
-    // Unbounded ratio (a kill without a prior knock still counts), same "x per y" shape as
-    // K/D Ratio - a % suffix would falsely imply a 0-100% bounded rate.
+    // Unbounded ratio (a kill without a prior knock still counts) - a % suffix would falsely imply a bounded rate.
     { label: "Finish Rate", value: `${stats.knockToKillRate.toFixed(2)}×` },
   ];
 

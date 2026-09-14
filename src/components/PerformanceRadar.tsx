@@ -39,8 +39,7 @@ function ringPoints(radius: number) {
   }).join(" ");
 }
 
-// Hand-rolled SVG hexagon radar - 6 fixed axes, no charting library needed for one chart.
-// Scales via viewBox so it can act as a real centerpiece instead of a small fixed-size chart.
+// No charting library needed for one hexagon radar; scales via viewBox so it can act as a real centerpiece.
 function PerformanceRadar({ scores }: PerformanceRadarProps) {
   const theme = useTheme();
   const gradientId = useId();
@@ -100,8 +99,7 @@ function PerformanceRadar({ scores }: PerformanceRadarProps) {
           );
         })}
 
-        {/* Progress content: the data shape grows in from the center on mount rather than
-            appearing instantly, reading as scores being measured rather than static. */}
+        {/* Data shape grows in from center on mount, reading as scores being measured rather than static. */}
         <g style={{ transformOrigin: `${CENTER_X}px ${CENTER_Y}px` }}>
           <animateTransform attributeName="transform" type="scale" from="0" to="1" dur="0.6s" fill="freeze" />
           <polygon

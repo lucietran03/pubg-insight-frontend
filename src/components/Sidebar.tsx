@@ -73,8 +73,7 @@ function HistoryItem({ entry }: { entry: AnalysisHistoryEntry }) {
 }
 
 // Scoped to the currently searched player - the backend's DynamoDB table is keyed by
-// (playerId, matchId), so there's no cross-player "recently analyzed" query available
-// without a schema change (see plan notes).
+// (playerId, matchId), so no cross-player query exists without a schema change.
 function RecentlyAnalyzed({ player, historyRefreshToken }: { player: Player; historyRefreshToken: number }) {
   const [entries, setEntries] = useState<AnalysisHistoryEntry[]>([]);
 

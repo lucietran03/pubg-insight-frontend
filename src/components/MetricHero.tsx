@@ -5,8 +5,7 @@ interface MetricHeroProps {
   value: string | number;
 }
 
-// Headline treatment for the 2-3 primary signals in Performance Breakdown - no container,
-// just scale + a short accent rule, so it reads as a headline rather than a bigger stat tile.
+// No container here, just scale + an accent rule, so it reads as a headline rather than a bigger stat tile.
 function MetricHero({ label, value }: MetricHeroProps) {
   return (
     <Box>

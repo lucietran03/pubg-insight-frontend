@@ -13,8 +13,7 @@ function pluralize(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? "" : "s"}`;
 }
 
-// Compact card: identity + headline win rate only. Full stat grid and radar live in
-// PerformanceBreakdown so this card matches its sibling's height.
+// Full stat grid and radar live in PerformanceBreakdown so this card matches its sibling's height.
 function SeasonStats({ stats, loading, error, onRetry }: SeasonStatsProps) {
   if (loading) {
     return (

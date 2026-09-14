@@ -9,8 +9,7 @@ interface BodyPartDiagramProps {
 const WIDTH = 200;
 const HEIGHT = 340;
 
-// Simplified silhouette, not anatomically precise. "Arms" and "Legs" are each a single
-// category covering both left+right hits, so both shapes in a pair share one color.
+// Simplified silhouette, not anatomically precise - "Arms"/"Legs" each cover both left+right hits, so paired shapes share one color.
 const REGIONS: { label: string; shapes: { kind: "circle" | "rect"; props: Record<string, number> }[] }[] = [
   { label: "Head", shapes: [{ kind: "circle", props: { cx: 100, cy: 36, r: 24 } }] },
   { label: "Torso", shapes: [{ kind: "rect", props: { x: 66, y: 64, width: 68, height: 100, rx: 16 } }] },
@@ -31,8 +30,7 @@ const REGIONS: { label: string; shapes: { kind: "circle" | "rect"; props: Record
   },
 ];
 
-// Hand-rolled SVG, same convention as PerformanceRadar.tsx. Fill intensity encodes hit
-// share; a region with zero hits stays an outline instead of a colored fill.
+// Fill intensity encodes hit share; a region with zero hits stays an outline rather than a colored fill.
 function BodyPartDiagram({ parts }: BodyPartDiagramProps) {
   const theme = useTheme();
 

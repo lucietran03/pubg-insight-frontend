@@ -6,8 +6,7 @@ interface PlayerIdentityCardProps {
   radar: RadarScores;
 }
 
-// Deterministic per-archetype text, not Gemini-generated - Gemini only ever explains why a
-// label was assigned, never invents it.
+// Deterministic per-archetype text, not Gemini-generated - Gemini only explains why a label was assigned.
 const ARCHETYPE_BLURBS: Record<string, string> = {
   "Frontline Eliminator": "Leads engagements and racks up kills at a high rate.",
   "Survival Specialist": "Prioritizes staying alive over early fights.",
@@ -18,8 +17,7 @@ const ARCHETYPE_BLURBS: Record<string, string> = {
   "Balanced Operator": "No single standout trait — performs evenly across combat, survival, and support.",
 };
 
-// Archetype is assigned backend-side as the single highest-scoring radar axis (or "Balanced
-// Operator" when the spread is small); this maps it back to that axis for display.
+// Archetype is assigned backend-side as the highest-scoring radar axis; this maps it back for display.
 const ARCHETYPE_AXIS: Record<string, keyof RadarScores | undefined> = {
   "Frontline Eliminator": "combat",
   "Survival Specialist": "survival",
@@ -38,8 +36,7 @@ const AXIS_LABELS: Record<keyof RadarScores, string> = {
   consistency: "Consistency",
 };
 
-// Rough qualitative confidence label based on how far the driving axis leads the rest of
-// the radar, not a separate backend value.
+// Qualitative label derived from how far the driving axis leads the rest, not a separate backend value.
 function classificationLabel(axisScore: number, otherScores: number[]): string {
   const avgOthers = otherScores.reduce((sum, value) => sum + value, 0) / otherScores.length;
   const margin = axisScore - avgOthers;
@@ -48,9 +45,7 @@ function classificationLabel(axisScore: number, otherScores: number[]): string {
   return "Emerging trait";
 }
 
-// Combat-identity composition: typography + a small diamond emblem, no box around it - a
-// bordered card here would just be another rectangle next to the player identity block.
-// Shape personality only, no illustration, per the project's "safe tier" design decision.
+// No bordered card here - it would just be another rectangle next to the player identity block above it.
 function PlayerIdentityCard({ archetype, radar }: PlayerIdentityCardProps) {
   const axis = ARCHETYPE_AXIS[archetype];
   const allScores = Object.values(radar);

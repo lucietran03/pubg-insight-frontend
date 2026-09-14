@@ -6,22 +6,19 @@ import type { Match } from "../types/match";
 import type { SeasonStats } from "../types/seasonStats";
 import { getErrorMessage } from "../utils/errorMessage";
 import AiInsights from "./AiInsights";
+import PopulationComparison from "./PopulationComparison";
 import StatTile from "./StatTile";
 import WeaponBreakdown from "./WeaponBreakdown";
 
-// Threshold before we attribute a slow page load to the backend's rate limiter rather than
-// a stall.
+// Threshold before attributing a slow load to the rate limiter rather than a stall.
 const SLOW_LOAD_WARNING_MS = 4000;
 
-// Caps how many matches this component pages through; matchIds is newest-first, so this
-// keeps the most recent N.
+// matchIds is newest-first, so capping here keeps the most recent N matches.
 const MAX_MATCHES_DISPLAYED = 50;
-// One page = one 3-column grid row. Kept well under the free-tier rate limit so a single
-// page turn can't trigger a 429 by itself.
+// Kept under the free-tier rate limit so a single page turn can't trigger a 429.
 const PAGE_SIZE = 6;
 
-// Comparison content: matches DeltaIndicator's slide/fade-in treatment so both places that
-// show "vs season average" read consistently.
+// Matches DeltaIndicator's slide/fade-in so both "vs season average" displays read consistently.
 const slideIn = keyframes`
   from { opacity: 0; transform: translateX(-6px); }
   to { opacity: 1; transform: translateX(0); }
@@ -46,8 +43,7 @@ function formatMatchDate(createdAt: string, includeTime = false): string {
   return `${dateLabel}, ${timeLabel}`;
 }
 
-// Reused across the app as the one signature marker shape (archetype emblem, this
-// "standout match" marker) rather than introducing a new glyph per context.
+// Reused as the app's one signature marker shape rather than introducing a new glyph per context.
 function DiamondMarker({ size = 8 }: { size?: number }) {
   return (
     <Box
@@ -70,8 +66,7 @@ interface MatchCardProps {
   onClick: () => void;
 }
 
-// Standout/below-average thresholds are real relative comparisons against the player's own
-// already-fetched season average damage, not fabricated or population-derived cutoffs.
+// Thresholds compare against the player's own season average damage, not a fabricated/population cutoff.
 const STANDOUT_DAMAGE_MULTIPLIER = 1.5;
 const BELOW_AVERAGE_DAMAGE_MULTIPLIER = 0.5;
 
@@ -112,8 +107,7 @@ function MatchCard({ state, selected, seasonStats, onClick }: MatchCardProps) {
     );
   }
 
-  // Reuses the app's existing "Top 10" threshold (already a tracked season stat) rather
-  // than inventing a new performance bucket.
+  // Reuses the existing "Top 10" season stat rather than inventing a new threshold.
   const isTopTen = state.winPlace <= 10;
   const isStandout = !!seasonStats && seasonStats.avgDamage > 0
     && state.damageDealt >= seasonStats.avgDamage * STANDOUT_DAMAGE_MULTIPLIER;
@@ -256,16 +250,14 @@ function MatchList({ playerId, matchIds, seasonStats, onAnalysisRecorded }: Matc
   const [page, setPage] = useState(0);
   const pageIds = displayedIds.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  // Caches every match fetched so far, so paging back to a page already seen never
-  // re-fetches it.
+  // Caches every match fetched so far so revisiting a page never re-fetches it.
   const [matchCache, setMatchCache] = useState<Record<string, MatchState>>({});
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [selectedError, setSelectedError] = useState<string | null>(null);
 
   const [showSlowLoadNotice, setShowSlowLoadNotice] = useState(false);
 
-  // Lets the fetch effect below read the latest cache without depending on matchCache
-  // itself (which would re-run the fetch on every result).
+  // Lets the fetch effect read the latest cache without depending on matchCache (which would re-run on every result).
   const matchCacheRef = useRef(matchCache);
   useEffect(() => {
     matchCacheRef.current = matchCache;
@@ -284,14 +276,11 @@ function MatchList({ playerId, matchIds, seasonStats, onAnalysisRecorded }: Matc
     });
   }, [playerId, matchIds, page]);
 
-  // True while any card on the current page is still waiting on its PUBG fetch.
   const isPageLoading = pageIds.some((matchId) => {
     const state = matchCache[matchId];
     return state === undefined || state === "loading";
   });
 
-  // Surfaces the rate-limit notice if the page's fetches are still pending after
-  // SLOW_LOAD_WARNING_MS.
   useEffect(() => {
     if (!isPageLoading) return;
     const timer = setTimeout(() => setShowSlowLoadNotice(true), SLOW_LOAD_WARNING_MS);
@@ -301,8 +290,7 @@ function MatchList({ playerId, matchIds, seasonStats, onAnalysisRecorded }: Matc
     };
   }, [isPageLoading, page]);
 
-  // Also doubles as the retry action: an errored cache entry falls through to a fresh
-  // fetch instead of returning early.
+  // Also doubles as the retry action: an errored cache entry falls through to a fresh fetch instead of returning early.
   const handleSelect = async (matchId: string) => {
     setSelectedMatchId(matchId);
     setSelectedError(null);
@@ -508,6 +496,10 @@ function MatchList({ playerId, matchIds, seasonStats, onAnalysisRecorded }: Matc
 
           {selectedMatchId && (
             <WeaponBreakdown key={`weapons-${selectedMatchId}`} playerId={playerId} matchId={selectedMatchId} />
+          )}
+
+          {selectedMatchId && (
+            <PopulationComparison key={`population-${selectedMatchId}`} playerId={playerId} matchId={selectedMatchId} />
           )}
 
           {selectedMatchId && (

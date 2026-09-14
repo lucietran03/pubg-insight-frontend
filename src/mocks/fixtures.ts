@@ -56,6 +56,7 @@ export const mockSeasonStats: SeasonStats = {
   top10Rate: 0.42,
   avgSurvivalSeconds: 780,
   longestKillMeters: 187,
+  knockToKillRate: 1.15,
   radar: { combat: 70, survival: 65, precision: 76, aggression: 62, support: 40, consistency: 42 },
   archetype: "Precision Hunter",
   previousSeasonComparison: {
@@ -64,6 +65,8 @@ export const mockSeasonStats: SeasonStats = {
     killDeathRatioDeltaPct: 12,
     headshotRateDeltaPct: -5,
     top10RateDeltaPct: 6,
+    avgSurvivalDeltaPct: 4,
+    longestKillDeltaPct: 22,
   },
 };
 

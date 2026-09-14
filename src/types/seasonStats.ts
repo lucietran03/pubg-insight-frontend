@@ -14,6 +14,8 @@ export interface SeasonComparison {
   killDeathRatioDeltaPct: number;
   headshotRateDeltaPct: number;
   top10RateDeltaPct: number;
+  avgSurvivalDeltaPct: number;
+  longestKillDeltaPct: number;
 }
 
 export interface SeasonStats {
@@ -26,6 +28,9 @@ export interface SeasonStats {
   top10Rate: number;
   avgSurvivalSeconds: number;
   longestKillMeters: number;
+  // Kills / knockdowns for the season - can exceed 1.0 since a kill without a preceding
+  // knock (e.g. a headshot) still counts as a kill.
+  knockToKillRate: number;
   radar: RadarScores;
   archetype: string;
   // Null when there is no previous season to compare against.

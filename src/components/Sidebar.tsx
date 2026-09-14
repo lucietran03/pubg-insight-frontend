@@ -53,7 +53,8 @@ function HistoryItem({ entry }: { entry: AnalysisHistoryEntry }) {
         </Typography>
       </Stack>
       <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25 }}>
-        #{entry.winPlace} · {entry.kills} kills · {Math.round(entry.damageDealt)} dmg
+        #{entry.winPlace} · {entry.kills} kills · {Math.round(entry.damageDealt)} dmg ·{" "}
+        {Math.round(entry.headshotRate * 100)}% HS
       </Typography>
       {entry.insightSummary && (
         <Typography

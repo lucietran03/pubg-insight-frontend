@@ -35,6 +35,7 @@ const STAGE_MS = MIN_SEQUENCE_MS / LOADING_STAGES.length;
 // important items.
 const MAX_STRENGTHS = 4;
 const MAX_HURT_ITEMS = 3;
+const MAX_RISK_FACTORS = 2;
 const MAX_RECOMMENDATIONS = 3;
 const MAX_TRAINING_PRIORITIES = 3;
 
@@ -171,7 +172,7 @@ function EvidenceList({
   label: string;
   items: string[];
   glyph: string;
-  tone: "success" | "error";
+  tone: "success" | "error" | "warning";
 }) {
   return (
     <Box
@@ -404,11 +405,14 @@ function AiInsights({ playerId, matchId, onAnalysisRecorded }: AiInsightsProps) 
   const stageIndex = Math.min(Math.floor(elapsedMs / STAGE_MS), LOADING_STAGES.length - 1);
   const progress = Math.min(99, (elapsedMs / MIN_SEQUENCE_MS) * 100);
 
-  // Risk factors are appended after weaknesses - both are negative signals - then capped.
+  // Weaknesses (this match) and risk factors (an ongoing pattern) are conceptually distinct
+  // backend fields - kept as separate labeled blocks rather than pooled together.
   const strengthItems = insight ? insight.strengths.slice(0, MAX_STRENGTHS) : [];
-  const hurtItems = insight ? [...insight.weaknesses, ...insight.riskFactors].slice(0, MAX_HURT_ITEMS) : [];
+  const hurtItems = insight ? insight.weaknesses.slice(0, MAX_HURT_ITEMS) : [];
+  const riskFactorItems = insight ? insight.riskFactors.slice(0, MAX_RISK_FACTORS) : [];
   const hasStrengths = strengthItems.length > 0;
   const hasHurt = hurtItems.length > 0;
+  const hasRiskFactors = riskFactorItems.length > 0;
 
   const topRecommendations = insight ? insight.recommendations.slice(0, MAX_RECOMMENDATIONS) : [];
   const trainingPriorities = insight ? insight.trainingPriorities.slice(0, MAX_TRAINING_PRIORITIES) : [];
@@ -482,6 +486,12 @@ function AiInsights({ playerId, matchId, onAnalysisRecorded }: AiInsightsProps) 
               {hasHurt && (
                 <EvidenceList label="WHAT HURT YOUR PERFORMANCE" items={hurtItems} glyph="!" tone="error" />
               )}
+            </Box>
+          )}
+
+          {hasRiskFactors && (
+            <Box sx={{ mt: 1.5 }}>
+              <EvidenceList label="ONGOING RISK FACTORS" items={riskFactorItems} glyph="⚠" tone="warning" />
             </Box>
           )}
 

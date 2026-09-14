@@ -36,8 +36,15 @@ function PerformanceBreakdown({ stats }: PerformanceBreakdownProps) {
           <StatTile label="Top 10 Rate" value={`${(stats.top10Rate * 100).toFixed(0)}%`} />
           {comparison && <DeltaIndicator deltaPct={comparison.top10RateDeltaPct} />}
         </Box>
-        <StatTile label="Avg Survival" value={`${Math.round(stats.avgSurvivalSeconds / 60)}m`} />
-        <StatTile label="Longest Kill" value={`${stats.longestKillMeters.toFixed(0)}m`} />
+        <Box>
+          <StatTile label="Avg Survival" value={`${Math.round(stats.avgSurvivalSeconds / 60)}m`} />
+          {comparison && <DeltaIndicator deltaPct={comparison.avgSurvivalDeltaPct} />}
+        </Box>
+        <Box>
+          <StatTile label="Longest Kill" value={`${stats.longestKillMeters.toFixed(0)}m`} />
+          {comparison && <DeltaIndicator deltaPct={comparison.longestKillDeltaPct} />}
+        </Box>
+        <StatTile label="Finish Rate" value={`${(stats.knockToKillRate * 100).toFixed(0)}%`} />
       </Box>
 
       <Box>

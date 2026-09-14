@@ -1,4 +1,4 @@
-import { Box, Divider, Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import type { SeasonStats } from "../types/seasonStats";
 import DeltaIndicator from "./DeltaIndicator";
 import MetricHero from "./MetricHero";
@@ -25,33 +25,24 @@ interface RailMetric {
   deltaPct?: number;
 }
 
-// Compact metric rail: one shared surface instead of five identical stat cards - each entry
-// is just a value/label pair separated by a divider, not its own bordered box.
+// Compact metric matrix: a 2-column grid instead of five identical stat cards - each entry
+// is just a value/label pair, not its own bordered box. 2 columns keeps each cell wide
+// enough to read comfortably in the narrower left column next to the radar.
 function MetricRail({ metrics }: { metrics: RailMetric[] }) {
   return (
-    <Stack direction="row" spacing={0} sx={{ flexWrap: "wrap", rowGap: 1.5 }}>
-      {metrics.map((metric, index) => (
-        <Stack
-          key={metric.label}
-          direction="row"
-          spacing={{ xs: 0, sm: 2 }}
-          sx={{ alignItems: "center" }}
-        >
-          {index > 0 && (
-            <Divider orientation="vertical" flexItem sx={{ display: { xs: "none", sm: "block" }, mr: 2 }} />
-          )}
-          <Box sx={{ minWidth: 84, px: { xs: 1.5, sm: 0 } }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1 }}>
-              {metric.value}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-              {metric.label}
-            </Typography>
-            {metric.deltaPct !== undefined && <DeltaIndicator deltaPct={metric.deltaPct} />}
-          </Box>
-        </Stack>
+    <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", columnGap: 2, rowGap: 1.5 }}>
+      {metrics.map((metric) => (
+        <Box key={metric.label}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1 }}>
+            {metric.value}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+            {metric.label}
+          </Typography>
+          {metric.deltaPct !== undefined && <DeltaIndicator deltaPct={metric.deltaPct} />}
+        </Box>
       ))}
-    </Stack>
+    </Box>
   );
 }
 
@@ -94,10 +85,25 @@ function PerformanceBreakdown({ stats }: PerformanceBreakdownProps) {
       </Stack>
 
       <Box>
-        <SubLabel>Player Profile</SubLabel>
-        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: -1, mb: 1 }}>
-          Performance DNA
-        </Typography>
+        <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 1 }}>
+          <SubLabel>Player Profile</SubLabel>
+          <Box
+            sx={{
+              width: 5,
+              height: 5,
+              borderRadius: "1px",
+              bgcolor: "primary.main",
+              transform: "rotate(45deg)",
+              flexShrink: 0,
+            }}
+          />
+          <Typography
+            variant="caption"
+            sx={{ fontWeight: 800, letterSpacing: 0.6, color: "primary.main", fontStyle: "italic" }}
+          >
+            Performance DNA
+          </Typography>
+        </Stack>
         <PerformanceRadar scores={stats.radar} />
       </Box>
     </Box>

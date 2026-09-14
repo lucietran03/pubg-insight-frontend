@@ -12,6 +12,8 @@ interface SidebarProps {
   player: Player | null;
   backendOnline: boolean | null;
   historyRefreshToken: number;
+  playersSearchedCount: number;
+  insightsGeneratedCount: number;
 }
 
 const MAX_HISTORY_ITEMS = 5;
@@ -114,7 +116,30 @@ function RecentlyAnalyzed({ player, historyRefreshToken }: { player: Player; his
   );
 }
 
-function Sidebar({ name, onNameChange, onSearch, loading, player, backendOnline, historyRefreshToken }: SidebarProps) {
+function StatBlock({ value, label }: { value: number; label: string }) {
+  return (
+    <Box sx={{ flex: 1, textAlign: "center" }}>
+      <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.1 }}>
+        {value}
+      </Typography>
+      <Typography variant="caption" color="text.secondary">
+        {label}
+      </Typography>
+    </Box>
+  );
+}
+
+function Sidebar({
+  name,
+  onNameChange,
+  onSearch,
+  loading,
+  player,
+  backendOnline,
+  historyRefreshToken,
+  playersSearchedCount,
+  insightsGeneratedCount,
+}: SidebarProps) {
   const statusColor =
     backendOnline === null ? "text.disabled" : backendOnline ? "success.main" : "error.main";
   const statusLabel =
@@ -134,12 +159,18 @@ function Sidebar({ name, onNameChange, onSearch, loading, player, backendOnline,
       <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: 1 }}>
         PUBG INSIGHT
       </Typography>
-      <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mt: 0.5, mb: 3 }}>
+      <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mt: 0.5, mb: 2 }}>
         <Box sx={{ width: 7, height: 7, borderRadius: "50%", bgcolor: statusColor }} />
         <Typography variant="caption" color="text.secondary">
           {statusLabel}
         </Typography>
       </Stack>
+
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3, lineHeight: 1.6 }}>
+        AI-powered PUBG performance analytics. Pulls live season and match data from PUBG's
+        Developer API, turns it into skill scores and a playstyle archetype, then uses Gemini to
+        generate coaching insights from that structured profile.
+      </Typography>
 
       <Stack spacing={1.5}>
         <TextField
@@ -153,6 +184,21 @@ function Sidebar({ name, onNameChange, onSearch, loading, player, backendOnline,
         <Button variant="contained" onClick={onSearch} disabled={loading} sx={{ fontWeight: 700, letterSpacing: 0.5 }}>
           Search
         </Button>
+      </Stack>
+
+      <Stack
+        direction="row"
+        sx={{
+          mt: 3,
+          p: 1.5,
+          borderRadius: "6px",
+          bgcolor: "background.paper",
+          border: "1px solid",
+          borderColor: "divider",
+        }}
+      >
+        <StatBlock value={playersSearchedCount} label="Players searched" />
+        <StatBlock value={insightsGeneratedCount} label="Insights generated" />
       </Stack>
 
       {player && <RecentlyAnalyzed player={player} historyRefreshToken={historyRefreshToken} />}

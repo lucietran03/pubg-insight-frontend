@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Alert, Box, CircularProgress, Container, Typography } from "@mui/material";
+import { Alert, Box, CircularProgress, Typography } from "@mui/material";
 import api from "./api/axios";
 import { searchPlayer } from "./services/playerService";
 import type { Player } from "./types/player";
@@ -15,6 +15,9 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   // Bumped after a new analysis is recorded so the sidebar's history list re-fetches.
   const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
+  // Real counts for this browser session (not fabricated global totals) - shown in the sidebar.
+  const [playersSearchedCount, setPlayersSearchedCount] = useState(0);
+  const [insightsGeneratedCount, setInsightsGeneratedCount] = useState(0);
 
   useEffect(() => {
     api
@@ -34,6 +37,7 @@ function App() {
     try {
       const result = await searchPlayer(trimmedName);
       setPlayer(result);
+      setPlayersSearchedCount((count) => count + 1);
     } catch (err) {
       setError(getErrorMessage(err, `Could not find player "${trimmedName}"`));
     } finally {
@@ -51,10 +55,12 @@ function App() {
         player={player}
         backendOnline={backendOnline}
         historyRefreshToken={historyRefreshToken}
+        playersSearchedCount={playersSearchedCount}
+        insightsGeneratedCount={insightsGeneratedCount}
       />
 
       <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-        <Container maxWidth="xl" sx={{ py: { xs: 2.5, md: 4 } }}>
+        <Box sx={{ px: { xs: 2, md: 4 }, py: { xs: 2.5, md: 4 } }}>
           {loading && (
             <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
               <CircularProgress size={24} />
@@ -79,16 +85,17 @@ function App() {
             <PlayerDashboard
               key={player.id}
               player={player}
-              onAnalysisRecorded={() => setHistoryRefreshToken((token) => token + 1)}
+              onAnalysisRecorded={() => {
+                setHistoryRefreshToken((token) => token + 1);
+                setInsightsGeneratedCount((count) => count + 1);
+              }}
             />
           )}
-        </Container>
+        </Box>
         <Box sx={{ borderTop: "1px solid", borderColor: "divider", mt: 2 }}>
-          <Container maxWidth="xl">
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block", textAlign: "center", py: 2 }}>
-              Tran Dong Nghi · s3914633 · RMIT Vietnam University
-            </Typography>
-          </Container>
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", textAlign: "center", py: 2 }}>
+            Tran Dong Nghi · s3914633 · RMIT Vietnam University
+          </Typography>
         </Box>
       </Box>
     </Box>

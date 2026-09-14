@@ -479,7 +479,7 @@ function MatchList({ playerId, matchIds, seasonStats, onAnalysisRecorded }: Matc
           {seasonDeltaTiles.length > 0 && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="overline" color="text.secondary">
-                Vs Season Average
+                Comparisons
               </Typography>
               <Box
                 sx={{
@@ -490,16 +490,15 @@ function MatchList({ playerId, matchIds, seasonStats, onAnalysisRecorded }: Matc
                 }}
               >
                 {seasonDeltaTiles}
+                {selectedMatchId && (
+                  <PopulationComparison key={`population-${selectedMatchId}`} playerId={playerId} matchId={selectedMatchId} />
+                )}
               </Box>
             </Box>
           )}
 
           {selectedMatchId && (
             <WeaponBreakdown key={`weapons-${selectedMatchId}`} playerId={playerId} matchId={selectedMatchId} />
-          )}
-
-          {selectedMatchId && (
-            <PopulationComparison key={`population-${selectedMatchId}`} playerId={playerId} matchId={selectedMatchId} />
           )}
 
           {selectedMatchId && (

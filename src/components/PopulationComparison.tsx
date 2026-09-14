@@ -1,16 +1,23 @@
 import { useEffect, useState } from "react";
 import { Box, Skeleton, Typography } from "@mui/material";
+import { keyframes } from "@emotion/react";
 import { getPopulationComparison } from "../services/populationService";
 import type { PopulationComparison as PopulationComparisonData } from "../types/populationComparison";
-import SectionTitle from "./SectionTitle";
 
 interface PopulationComparisonProps {
   playerId: string;
   matchId: string;
 }
 
+// Matches MatchList's season-average delta tiles so this reads as one more tile in the
+// same comparisons grid, not a separate section.
+const slideIn = keyframes`
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: translateX(0); }
+`;
+
 // Fails silently by design, same convention as WeaponBreakdown: a fetch failure or an
-// empty analytics feed just skips rendering this optional panel - no error UI, no retry.
+// empty analytics feed just skips rendering this tile - no error UI, no retry.
 function PopulationComparison({ playerId, matchId }: PopulationComparisonProps) {
   const [data, setData] = useState<PopulationComparisonData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,13 +41,13 @@ function PopulationComparison({ playerId, matchId }: PopulationComparisonProps) 
     };
   }, [playerId, matchId]);
 
-  // Athena queries take a few seconds, so a skeleton (rather than nothing) signals a
-  // panel is actually loading here, distinct from WeaponBreakdown's near-instant DynamoDB read.
+  // Athena queries take a few seconds, so a skeleton tile (rather than nothing) signals
+  // this slot is still loading, distinct from the season-average tiles that render instantly.
   if (loading) {
     return (
-      <Box sx={{ mt: 2 }}>
-        <Skeleton variant="text" width={180} height={28} />
-        <Skeleton variant="text" width="60%" height={20} />
+      <Box sx={{ bgcolor: "background.paper", borderRadius: "6px", py: 1.5, px: 1, textAlign: "center" }}>
+        <Skeleton variant="text" width="60%" height={32} sx={{ mx: "auto" }} />
+        <Skeleton variant="text" width="80%" height={20} sx={{ mx: "auto" }} />
       </Box>
     );
   }
@@ -50,24 +57,22 @@ function PopulationComparison({ playerId, matchId }: PopulationComparisonProps) 
   }
 
   const rounded = Math.round(data.deltaPct);
-  const isAboveMedian = rounded > 0;
+  const isBetter = rounded >= 0;
 
   return (
-    <Box sx={{ mt: 2 }}>
-      <SectionTitle>Population Comparison</SectionTitle>
-      <Box sx={{ bgcolor: "background.paper", borderRadius: "6px", p: 1.5 }}>
-        <Typography
-          variant="body2"
-          sx={{ fontWeight: 700, color: isAboveMedian ? "success.main" : "text.primary" }}
-        >
-          {rounded === 0
-            ? "Right at the median damage for this game mode."
-            : `${isAboveMedian ? "▲" : "▼"} ${Math.abs(rounded)}% ${isAboveMedian ? "above" : "below"} the median damage for this game mode.`}
-        </Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25 }}>
-          Median {data.medianDamage.toFixed(0)} damage across {data.sampleSize} matches analyzed by this app.
-        </Typography>
-      </Box>
+    <Box sx={{ bgcolor: "background.paper", borderRadius: "6px", py: 1.5, px: 1, textAlign: "center" }}>
+      <Typography
+        variant="h5"
+        sx={{ fontWeight: 800, lineHeight: 1, color: isBetter ? "success.main" : "error.main", animation: `${slideIn} 0.4s ease-out` }}
+      >
+        {isBetter ? "▲" : "▼"} {Math.abs(rounded)}%
+      </Typography>
+      <Typography variant="body2" sx={{ fontWeight: 700, mt: 0.5 }}>
+        Damage
+      </Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+        vs all players ({data.sampleSize})
+      </Typography>
     </Box>
   );
 }

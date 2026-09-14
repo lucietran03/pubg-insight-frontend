@@ -229,21 +229,19 @@ function ActionPlan({ items }: { items: string[] }) {
         {items.map((item, index) => {
           const { action, why } = splitRecommendation(item);
           const focus = inferFocusTag(item);
-          // Index-based styling is intentional here only - unlike the strengths/weaknesses lists, order matters here.
-          const isPrimary = index === 0;
           return (
-            <Stack key={item} direction="row" spacing={isPrimary ? 1.75 : 1.25} sx={{ alignItems: "flex-start" }}>
+            <Stack key={item} direction="row" spacing={1.25} sx={{ alignItems: "flex-start" }}>
               <Box
                 sx={{
                   flexShrink: 0,
-                  width: isPrimary ? 32 : 20,
-                  height: isPrimary ? 32 : 20,
+                  width: 24,
+                  height: 24,
                   borderRadius: "50%",
                   bgcolor: "primary.main",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: isPrimary ? 16 : 11,
+                  fontSize: 12,
                   fontWeight: 800,
                   color: "#121212",
                 }}
@@ -251,10 +249,7 @@ function ActionPlan({ items }: { items: string[] }) {
                 {index + 1}
               </Box>
               <Box>
-                <Typography
-                  variant={isPrimary ? "body1" : "body2"}
-                  sx={{ fontWeight: isPrimary ? 800 : 700, lineHeight: 1.6, color: isPrimary ? "text.primary" : "text.secondary" }}
-                >
+                <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.6, color: "text.primary" }}>
                   {action}
                 </Typography>
                 {why && (

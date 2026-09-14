@@ -84,7 +84,7 @@ function PerformanceBreakdown({ stats }: PerformanceBreakdownProps) {
         </Box>
       </Stack>
 
-      <Box>
+      <Stack spacing={3}>
         <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 1 }}>
           <SubLabel>Player Profile</SubLabel>
           <Box
@@ -105,7 +105,7 @@ function PerformanceBreakdown({ stats }: PerformanceBreakdownProps) {
           </Typography>
         </Stack>
         <PerformanceRadar scores={stats.radar} />
-      </Box>
+      </Stack>
     </Box>
   );
 }

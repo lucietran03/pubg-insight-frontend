@@ -8,8 +8,7 @@ import { getErrorMessage } from "../utils/errorMessage";
 import { dedupeAdjacentWords } from "../utils/sanitizeInsightText";
 import SectionTitle from "./SectionTitle";
 
-// Applied once at the point the raw API result is accepted, so every downstream render site
-// (summary, lists, playstyle, etc.) gets clean text without each one re-implementing it.
+// Applied once here so every downstream render site gets clean text without re-implementing this.
 function sanitizeInsight(insight: Insight): Insight {
   return {
     ...insight,
@@ -31,8 +30,7 @@ interface AiInsightsProps {
   onAnalysisRecorded?: () => void;
 }
 
-// Purely narrative - the backend makes one call, not seven - staged to read as a pipeline
-// running instead of a frozen spinner.
+// Purely narrative - the backend makes one call, not seven; staged to read as a pipeline rather than a frozen spinner.
 const LOADING_STAGES = [
   "Connecting to performance data...",
   "Fetching recent match history...",
@@ -43,8 +41,7 @@ const LOADING_STAGES = [
   "Finalizing AI report...",
 ];
 
-// Minimum time the staged sequence plays regardless of API speed; runs in parallel with
-// the real request (see handleGenerate), never after it.
+// Minimum time the staged sequence plays, run in parallel with the real request (see handleGenerate), never after it.
 const MIN_SEQUENCE_MS = 2800;
 const STAGE_MS = MIN_SEQUENCE_MS / LOADING_STAGES.length;
 
@@ -61,9 +58,8 @@ function capitalizeFragment(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-// Strengths/weaknesses/risk factors arrive as a single sentence, not a {title, evidence}
-// shape. Splits at the first delimiter whose trailing half contains a digit, treating that
-// half as the numeric evidence; falls back to the whole sentence as the title.
+// Input is a single sentence, not a {title, evidence} shape - splits at the first delimiter
+// whose trailing half contains a digit, treated as the numeric evidence.
 function splitEvidence(sentence: string): { title: string; evidence: string | null } {
   const trimmed = sentence.trim();
   const delimiters = [";", " — ", " - ", ": ", ", "];
@@ -80,9 +76,8 @@ function splitEvidence(sentence: string): { title: string; evidence: string | nu
   return { title: capitalizeFragment(trimmed), evidence: null };
 }
 
-// Splits a recommendation sentence into action + WHY at the first rationale marker present,
-// instead of inventing a generic reason. " to " is checked last since it's the most common
-// phrasing but the least specific marker.
+// Splits at the first rationale marker present instead of inventing a generic reason;
+// " to " is checked last since it's the most common but least specific marker.
 function splitRecommendation(sentence: string): { action: string; why: string | null } {
   const trimmed = sentence.trim();
   const lower = trimmed.toLowerCase();
@@ -115,7 +110,6 @@ function inferFocusTag(sentence: string): string | null {
   return rule ? rule[1] : null;
 }
 
-// Small eyebrow-style label reused across the report's sub-sections.
 function SectionLabel({ text, color }: { text: string; color: string }) {
   return (
     <Typography
@@ -127,9 +121,7 @@ function SectionLabel({ text, color }: { text: string; color: string }) {
   );
 }
 
-// Shared card style for Overall Verdict, Playstyle Diagnosis, and Long-term Development.
-// `rankedLines` lets Long-term Development show trainingPriorities as ranked lines under
-// the paragraph.
+// `rankedLines` is only used by Long-term Development, to show trainingPriorities as ranked lines under the paragraph.
 function NarrativeCard({
   label,
   paragraph,
@@ -178,8 +170,7 @@ function NarrativeCard({
   );
 }
 
-// Shared list style for "What You Did Well" and "What Hurt Your Performance". Each item
-// renders as a title line plus an optional evidence line (see splitEvidence).
+// Each item renders as a title line plus an optional evidence line (see splitEvidence).
 function EvidenceList({
   label,
   items,
@@ -229,8 +220,7 @@ function EvidenceList({
   );
 }
 
-// Used for Key Coaching Advice. Each step shows the action plus, only where the sentence
-// supports it, a WHY line and an inferred FOCUS tag - otherwise just the numbered action.
+// Shows a WHY line and inferred FOCUS tag only when the sentence supports it, otherwise just the numbered action.
 function ActionPlan({ items }: { items: string[] }) {
   return (
     <Box sx={{ mt: 2.5 }}>
@@ -239,8 +229,7 @@ function ActionPlan({ items }: { items: string[] }) {
         {items.map((item, index) => {
           const { action, why } = splitRecommendation(item);
           const focus = inferFocusTag(item);
-          // Index-based styling is intentional here only - this is a ranked coaching list,
-          // not a strengths/weaknesses list where order must never affect presentation.
+          // Index-based styling is intentional here only - unlike the strengths/weaknesses lists, order matters here.
           const isPrimary = index === 0;
           return (
             <Stack key={item} direction="row" spacing={isPrimary ? 1.75 : 1.25} sx={{ alignItems: "flex-start" }}>
@@ -293,8 +282,7 @@ function ActionPlan({ items }: { items: string[] }) {
   );
 }
 
-// Decorative nod to the app's 6-axis PerformanceRadar; only mounted when reduced motion
-// isn't requested.
+// Decorative nod to the app's 6-axis PerformanceRadar; skipped when reduced motion is requested.
 function HexagonSketch() {
   return (
     <Box
@@ -355,24 +343,21 @@ function AiInsights({ playerId, matchId, onAnalysisRecorded }: AiInsightsProps) 
   const [insight, setInsight] = useState<Insight | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Drives the fade/slide-in transition once a result or error is ready to display.
   const [revealed, setRevealed] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
+  const [linkCopied, setLinkCopied] = useState(false);
 
-  // Computed once - the staged animation is purely cosmetic, no need to react to the media
-  // query changing mid-session.
+  // Computed once since the staged animation is purely cosmetic - no need to react to the query changing mid-session.
   const [reducedMotion] = useState(
     () =>
       typeof window !== "undefined" && typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 
-  // Guards against a stale request (e.g. a retry after an error) resolving after a newer
-  // one has already started.
+  // Guards against a stale request (e.g. a retry after an error) resolving after a newer one has started.
   const generationRef = useRef(0);
 
-  // Ticks elapsedMs while loading so the staged panel can derive both the current stage
-  // message and the progress percentage from a single clock.
+  // Ticks elapsedMs while loading so the staged panel derives both stage and progress from one clock.
   useEffect(() => {
     if (!loading || reducedMotion) return;
     const start = Date.now();
@@ -388,8 +373,7 @@ function AiInsights({ playerId, matchId, onAnalysisRecorded }: AiInsightsProps) 
     setRevealed(false);
     setElapsedMs(0);
 
-    // Runs in parallel with the real request; only prevents the visuals from finishing
-    // before the minimum duration, never delays the network call.
+    // Runs in parallel with the real request - only prevents the visuals from finishing early, never delays the network call.
     const minDurationPromise = reducedMotion
       ? Promise.resolve()
       : new Promise<void>((resolve) => setTimeout(resolve, MIN_SEQUENCE_MS));
@@ -403,8 +387,7 @@ function AiInsights({ playerId, matchId, onAnalysisRecorded }: AiInsightsProps) 
         .then(() => onAnalysisRecorded?.())
         .catch(() => {});
     } catch (err) {
-      // Honor the minimum duration on failure too, so a fast error doesn't cut the staged
-      // sequence off mid-stage.
+      // Honors the minimum duration on failure too, so a fast error doesn't cut the staged sequence off mid-stage.
       await minDurationPromise;
       if (generationRef.current !== myGeneration) return;
       setError(getErrorMessage(err, "Could not generate insights for this match."));
@@ -420,14 +403,24 @@ function AiInsights({ playerId, matchId, onAnalysisRecorded }: AiInsightsProps) 
     }
   };
 
-  // If the API resolves before MIN_SEQUENCE_MS, elapsedMs keeps advancing (the interval only
-  // stops when `loading` flips false). If it takes longer, both clamp at the last stage / 99%
-  // until the response lands.
+  // Deterministic from playerId/matchId - no fetch needed, the analysis was persisted by the recordAnalysis call above.
+  const handleCopyShareLink = async () => {
+    const url = `${import.meta.env.VITE_SHARE_API_BASE_URL}/share/${encodeURIComponent(playerId)}/${encodeURIComponent(matchId)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      // Clipboard API can be unavailable (e.g. insecure context) - silently ignored, like this component's other secondary actions.
+    }
+  };
+
+  // If the API resolves early, elapsedMs keeps advancing until `loading` flips false; if it takes
+  // longer, both clamp at the last stage / 99% until the response lands.
   const stageIndex = Math.min(Math.floor(elapsedMs / STAGE_MS), LOADING_STAGES.length - 1);
   const progress = Math.min(99, (elapsedMs / MIN_SEQUENCE_MS) * 100);
 
-  // Weaknesses (this match) and risk factors (an ongoing pattern) are conceptually distinct
-  // backend fields - kept as separate labeled blocks rather than pooled together.
+  // Weaknesses (this match) and risk factors (an ongoing pattern) are distinct backend fields, kept as separate blocks.
   const strengthItems = insight ? insight.strengths.slice(0, MAX_STRENGTHS) : [];
   const hurtItems = insight ? insight.weaknesses.slice(0, MAX_HURT_ITEMS) : [];
   const riskFactorItems = insight ? insight.riskFactors.slice(0, MAX_RISK_FACTORS) : [];
@@ -527,6 +520,15 @@ function AiInsights({ playerId, matchId, onAnalysisRecorded }: AiInsightsProps) 
               rankedLines={trainingPriorities}
             />
           )}
+
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={handleCopyShareLink}
+            sx={{ mt: 2.5, fontWeight: 700 }}
+          >
+            {linkCopied ? "Link copied!" : "Copy Share Link"}
+          </Button>
         </Box>
       )}
     </Box>

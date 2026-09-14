@@ -170,7 +170,6 @@ function NarrativeCard({
   );
 }
 
-// Each item renders as a title line plus an optional evidence line (see splitEvidence).
 function EvidenceList({
   label,
   items,
@@ -220,7 +219,6 @@ function EvidenceList({
   );
 }
 
-// Shows a WHY line and inferred FOCUS tag only when the sentence supports it, otherwise just the numbered action.
 function ActionPlan({ items }: { items: string[] }) {
   return (
     <Box sx={{ mt: 2.5 }}>

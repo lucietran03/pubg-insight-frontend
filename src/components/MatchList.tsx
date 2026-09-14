@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Alert, Box, Chip, Divider, Pagination, Skeleton, Stack, Typography } from "@mui/material";
+import { keyframes } from "@emotion/react";
 import { getMatchStats } from "../services/matchService";
 import { getSeasonStats } from "../services/seasonStatsService";
 import type { Match } from "../types/match";
@@ -19,6 +20,13 @@ const MAX_MATCHES_DISPLAYED = 50;
 // One page = one 3-column grid row. Kept well under the free-tier rate limit so a single
 // page turn can't trigger a 429 by itself.
 const PAGE_SIZE = 6;
+
+// Comparison content: matches DeltaIndicator's slide/fade-in treatment so both places that
+// show "vs season average" read consistently.
+const slideIn = keyframes`
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: translateX(0); }
+`;
 
 interface MatchListProps {
   playerId: string;
@@ -95,6 +103,11 @@ function MatchCard({ state, selected, onClick }: MatchCardProps) {
         flexDirection: "column",
         gap: 1,
         minHeight: 84,
+        transition: "transform 0.15s ease, border-color 0.15s ease",
+        "&:hover": {
+          transform: "translateY(-2px)",
+          borderColor: "primary.main",
+        },
       }}
     >
       <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -145,7 +158,7 @@ interface DeltaMetric {
 function buildDeltaTiles(metrics: DeltaMetric[]) {
   return metrics
     .filter((metric) => metric.seasonAvg !== 0)
-    .map((metric) => {
+    .map((metric, index) => {
       const pct = ((metric.matchValue - metric.seasonAvg) / metric.seasonAvg) * 100;
       const isBetter = pct >= 0;
       return (
@@ -161,7 +174,12 @@ function buildDeltaTiles(metrics: DeltaMetric[]) {
         >
           <Typography
             variant="h5"
-            sx={{ fontWeight: 800, lineHeight: 1, color: isBetter ? "success.main" : "error.main" }}
+            sx={{
+              fontWeight: 800,
+              lineHeight: 1,
+              color: isBetter ? "success.main" : "error.main",
+              animation: `${slideIn} 0.4s ease-out ${index * 0.08}s both`,
+            }}
           >
             {isBetter ? "▲" : "▼"} {Math.abs(pct).toFixed(0)}%
           </Typography>

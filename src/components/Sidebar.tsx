@@ -37,6 +37,11 @@ function HistoryItem({ entry }: { entry: AnalysisHistoryEntry }) {
         bgcolor: "background.default",
         border: "1px solid",
         borderColor: "divider",
+        transition: "border-color 0.15s ease, background-color 0.15s ease",
+        "&:hover": {
+          borderColor: "primary.main",
+          bgcolor: "background.paper",
+        },
       }}
     >
       <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "baseline" }}>
@@ -166,10 +171,8 @@ function Sidebar({
         </Typography>
       </Stack>
 
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3, lineHeight: 1.6 }}>
-        AI-powered PUBG performance analytics. Pulls live season and match data from PUBG's
-        Developer API, turns it into skill scores and a playstyle archetype, then uses Gemini to
-        generate coaching insights from that structured profile.
+      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2.5 }}>
+        AI-powered PUBG performance analytics.
       </Typography>
 
       <Stack spacing={1.5}>

@@ -100,25 +100,30 @@ function PerformanceRadar({ scores }: PerformanceRadarProps) {
           );
         })}
 
-        <polygon
-          points={dataPoints}
-          fill={`url(#${gradientId})`}
-          stroke={theme.palette.primary.main}
-          strokeWidth={2.5}
-          strokeLinejoin="round"
-          filter={`url(#${glowId})`}
-        />
-        {vertices.map((vertex, i) => (
-          <circle
-            key={AXES[i].key}
-            cx={vertex.x}
-            cy={vertex.y}
-            r={4}
-            fill={theme.palette.primary.main}
-            stroke={theme.palette.background.paper}
-            strokeWidth={2}
+        {/* Progress content: the data shape grows in from the center on mount rather than
+            appearing instantly, reading as scores being measured rather than static. */}
+        <g style={{ transformOrigin: `${CENTER_X}px ${CENTER_Y}px` }}>
+          <animateTransform attributeName="transform" type="scale" from="0" to="1" dur="0.6s" fill="freeze" />
+          <polygon
+            points={dataPoints}
+            fill={`url(#${gradientId})`}
+            stroke={theme.palette.primary.main}
+            strokeWidth={2.5}
+            strokeLinejoin="round"
+            filter={`url(#${glowId})`}
           />
-        ))}
+          {vertices.map((vertex, i) => (
+            <circle
+              key={AXES[i].key}
+              cx={vertex.x}
+              cy={vertex.y}
+              r={4}
+              fill={theme.palette.primary.main}
+              stroke={theme.palette.background.paper}
+              strokeWidth={2}
+            />
+          ))}
+        </g>
 
         {AXES.map((axis, i) => {
           const { x, y } = pointAt(i, LABEL_RADIUS);

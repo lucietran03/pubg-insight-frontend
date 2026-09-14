@@ -52,6 +52,7 @@ function WeaponGaugeCard({ weapon, share, isTop }: { weapon: WeaponKill; share: 
     >
       <svg width={RING_SIZE} height={RING_SIZE} viewBox="0 0 100 100" role="img" aria-label={`${weapon.weapon} kill share`}>
         <circle cx={50} cy={50} r={RING_RADIUS} fill="none" stroke={theme.palette.divider} strokeWidth={9} />
+        {/* Progress content: the ring fills in on mount instead of appearing at final size. */}
         <circle
           cx={50}
           cy={50}
@@ -60,9 +61,18 @@ function WeaponGaugeCard({ weapon, share, isTop }: { weapon: WeaponKill; share: 
           stroke={theme.palette.primary.main}
           strokeWidth={9}
           strokeLinecap="round"
-          strokeDasharray={`${arcLength} ${RING_CIRCUMFERENCE}`}
+          strokeDasharray={RING_CIRCUMFERENCE}
+          strokeDashoffset={RING_CIRCUMFERENCE}
           transform="rotate(-90 50 50)"
-        />
+        >
+          <animate
+            attributeName="stroke-dashoffset"
+            from={RING_CIRCUMFERENCE}
+            to={RING_CIRCUMFERENCE - arcLength}
+            dur="0.8s"
+            fill="freeze"
+          />
+        </circle>
         <text x={50} y={47} textAnchor="middle" fontSize={24} fontWeight={800} fill={theme.palette.text.primary}>
           {weapon.kills}
         </text>

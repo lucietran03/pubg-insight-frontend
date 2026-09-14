@@ -124,14 +124,14 @@ function RecentlyAnalyzed({ player, historyRefreshToken }: { player: Player; his
 
 function StatBlock({ value, label }: { value: number; label: string }) {
   return (
-    <Box sx={{ flex: 1, textAlign: "center" }}>
+    <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "baseline" }}>
+      <Typography variant="body2" color="text.secondary">
+        {label}
+      </Typography>
       <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.1 }}>
         {value}
       </Typography>
-      <Typography variant="caption" color="text.secondary">
-        {label}
-      </Typography>
-    </Box>
+    </Stack>
   );
 }
 
@@ -154,7 +154,7 @@ function Sidebar({
   return (
     <Box
       sx={{
-        width: { xs: "100%", md: 300 },
+        width: { xs: "100%", md: 380 },
         flexShrink: 0,
         borderRight: { md: "1px solid" },
         borderBottom: { xs: "1px solid", md: "none" },
@@ -191,7 +191,7 @@ function Sidebar({
       </Stack>
 
       <Stack
-        direction="row"
+        spacing={1}
         sx={{
           mt: 3,
           p: 1.5,

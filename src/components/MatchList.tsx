@@ -496,7 +496,7 @@ function MatchList({ playerId, matchIds, seasonStats, initialMatchId, onAnalysis
             <StatTile label="Survived" value={`${Math.round(selectedMatch.timeSurvivedSeconds / 60)}m`} />
           </Box>
 
-          {seasonDeltaTiles.length > 0 && (
+          {(seasonDeltaTiles.length > 0 || selectedMatchId) && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="overline" color="text.secondary">
                 Comparisons
